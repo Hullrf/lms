@@ -6,6 +6,7 @@ use App\Http\Controllers\Student\CourseController;
 use App\Http\Controllers\Student\LessonController;
 use App\Http\Controllers\Student\EnrollmentController;
 use App\Http\Controllers\Student\ProgressController;
+use App\Http\Controllers\Admin\CategoryController;
 use App\Http\Controllers\Admin;
 
 // ─── Públicas ────────────────────────────────────────────────
@@ -34,6 +35,7 @@ Route::middleware(['auth', 'admin'])
           Route::resource('courses.modules', Admin\ModuleController::class)->shallow();
           Route::resource('modules.lessons', Admin\LessonController::class)->shallow();
           Route::resource('users', Admin\UserController::class);
+          Route::resource('categories', Admin\CategoryController::class);
      });
 
 Route::get('/profile', [\App\Http\Controllers\Student\ProfileController::class, 'edit'])->name('profile.edit');
@@ -42,4 +44,5 @@ Route::get('/certificates/{course}', [\App\Http\Controllers\Student\CertificateC
 Route::get('/certificates/{course}/download', [\App\Http\Controllers\Student\CertificateController::class, 'download'])->name('certificates.download');
 Route::get('/checkout/{course}', [\App\Http\Controllers\Student\PaymentController::class, 'checkout'])->name('checkout');
 Route::post('/checkout/{course}/process', [\App\Http\Controllers\Student\PaymentController::class, 'process'])->name('checkout.process');
+
 require __DIR__ . '/auth.php';
