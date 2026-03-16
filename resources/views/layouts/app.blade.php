@@ -9,6 +9,8 @@
 </head>
 <body class="bg-gray-50 text-gray-800 min-h-screen flex flex-col">
 
+    <div x-data="{ open: false }">
+
     <nav class="bg-white shadow-sm border-b border-gray-200">
         <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
             <div class="flex justify-between h-16 items-center">
@@ -17,26 +19,98 @@
                 </a>
                 <div class="flex items-center gap-4">
                     <a href="{{ route('courses.index') }}" class="text-sm text-gray-600 hover:text-indigo-600">Cursos</a>
-                    @auth
-                        <a href="{{ route('dashboard') }}" class="text-sm text-gray-600 hover:text-indigo-600">Mi aprendizaje</a>
-                        @if(auth()->user()->isAdmin() || auth()->user()->isInstructor())
-                            <a href="{{ route('admin.dashboard') }}" class="text-sm text-indigo-600 font-medium">
-                                {{ auth()->user()->isAdmin() ? 'Admin' : 'Mi panel' }}
-                            </a>
-                        @endif
-                        <form method="POST" action="{{ route('logout') }}" class="inline">
-                            @csrf
-                            <button class="text-sm text-gray-500 hover:text-red-500">Salir</button>
-                        </form>
-                    @else
-                        <a href="{{ route('login') }}" class="text-sm text-gray-600 hover:text-indigo-600">Iniciar sesión</a>
-                        <a href="{{ route('register') }}" class="text-sm bg-indigo-600 text-white px-4 py-2 rounded-lg hover:bg-indigo-700">Registrarse</a>
-                        <a href="{{ route('profile.edit') }}" class="text-sm text-gray-600 hover:text-indigo-600">Mi perfil</a>
-                    @endauth
+                    {{-- Botón hamburguesa --}}
+                    <button @click="open = true"
+                            class="flex flex-col justify-center items-center w-9 h-9 rounded-lg hover:bg-gray-100 transition gap-1.5"
+                            aria-label="Menú">
+                        <span class="block w-5 h-0.5 bg-gray-600"></span>
+                        <span class="block w-5 h-0.5 bg-gray-600"></span>
+                        <span class="block w-5 h-0.5 bg-gray-600"></span>
+                    </button>
                 </div>
             </div>
         </div>
     </nav>
+
+    {{-- Overlay --}}
+    <div x-show="open"
+         x-transition:enter="transition-opacity duration-200"
+         x-transition:enter-start="opacity-0"
+         x-transition:enter-end="opacity-100"
+         x-transition:leave="transition-opacity duration-200"
+         x-transition:leave-start="opacity-100"
+         x-transition:leave-end="opacity-0"
+         @click="open = false"
+         class="fixed inset-0 bg-black/40 z-40"
+         style="display:none"></div>
+
+    {{-- Drawer lateral --}}
+    <div x-show="open"
+         x-transition:enter="transition-transform duration-250 ease-out"
+         x-transition:enter-start="translate-x-full"
+         x-transition:enter-end="translate-x-0"
+         x-transition:leave="transition-transform duration-200 ease-in"
+         x-transition:leave-start="translate-x-0"
+         x-transition:leave-end="translate-x-full"
+         class="fixed top-0 right-0 h-full w-72 bg-white shadow-2xl z-50 flex flex-col"
+         style="display:none">
+
+        {{-- Cabecera del drawer --}}
+        <div class="flex items-center justify-between px-6 py-5 border-b border-gray-100">
+            <span class="font-semibold text-gray-800">Menú</span>
+            <button @click="open = false"
+                    class="text-gray-400 hover:text-gray-600 text-2xl leading-none"
+                    aria-label="Cerrar">&times;</button>
+        </div>
+
+        {{-- Enlaces --}}
+        <nav class="flex-1 px-6 py-6 space-y-1 overflow-y-auto">
+            @auth
+                {{-- Info del usuario --}}
+                <div class="mb-4 pb-4 border-b border-gray-100">
+                    <p class="text-sm font-semibold text-gray-800">{{ auth()->user()->name }}</p>
+                    <p class="text-xs text-gray-400">{{ auth()->user()->email }}</p>
+                </div>
+
+                <a href="{{ route('dashboard') }}"
+                   class="flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm text-gray-700 hover:bg-indigo-50 hover:text-indigo-600 transition">
+                    📚 Mi aprendizaje
+                </a>
+
+                <a href="{{ route('profile.edit') }}"
+                   class="flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm text-gray-700 hover:bg-indigo-50 hover:text-indigo-600 transition">
+                    👤 Mi perfil
+                </a>
+
+                @if(auth()->user()->isAdmin() || auth()->user()->isInstructor())
+                <a href="{{ route('admin.dashboard') }}"
+                   class="flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm text-indigo-600 font-medium hover:bg-indigo-50 transition">
+                    ⚙️ {{ auth()->user()->isAdmin() ? 'Panel de administración' : 'Mi panel de instructor' }}
+                </a>
+                @endif
+
+                <div class="pt-4 mt-4 border-t border-gray-100">
+                    <form method="POST" action="{{ route('logout') }}">
+                        @csrf
+                        <button class="w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm text-red-500 hover:bg-red-50 transition text-left">
+                            🚪 Cerrar sesión
+                        </button>
+                    </form>
+                </div>
+            @else
+                <a href="{{ route('login') }}"
+                   class="flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm text-gray-700 hover:bg-indigo-50 hover:text-indigo-600 transition">
+                    🔑 Iniciar sesión
+                </a>
+                <a href="{{ route('register') }}"
+                   class="flex items-center justify-center gap-2 mt-2 px-4 py-2.5 rounded-lg text-sm bg-indigo-600 text-white hover:bg-indigo-700 transition font-medium">
+                    Registrarse
+                </a>
+            @endauth
+        </nav>
+    </div>
+
+    </div>{{-- fin x-data --}}
 
     @if(session('success'))
         <div class="bg-green-100 border border-green-300 text-green-800 px-4 py-3 text-sm text-center">
