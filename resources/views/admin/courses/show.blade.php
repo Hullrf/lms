@@ -58,23 +58,68 @@
                 {{-- Lecciones --}}
                 <ul class="divide-y divide-gray-100">
                     @foreach($module->lessons as $lesson)
-                        <li class="px-4 py-2 flex justify-between items-center text-sm">
-                            <div class="flex items-center gap-2">
-                                <span>{{ $lesson->type === 'video' ? '▶️' : ($lesson->type === 'quiz' ? '📝' : '📄') }}</span>
-                                <span class="text-gray-700">{{ $lesson->title }}</span>
-                                @if($lesson->is_preview)
-                                    <span class="text-xs text-green-600 font-medium">Preview</span>
-                                @endif
-                                @if($lesson->type === 'quiz' && $canEdit)
-                                    <a href="{{ route('admin.quiz.edit', $lesson) }}" class="text-xs text-indigo-500 hover:underline ml-2">Editar quiz</a>
+                        <li class="text-sm border-b border-gray-50 last:border-0">
+                            <div class="px-4 py-2 flex justify-between items-center">
+                                <div class="flex items-center gap-2">
+                                    <span>{{ $lesson->type === 'video' ? '▶️' : ($lesson->type === 'quiz' ? '📝' : '📄') }}</span>
+                                    <span class="text-gray-700">{{ $lesson->title }}</span>
+                                    @if($lesson->is_preview)
+                                        <span class="text-xs text-green-600 font-medium">Preview</span>
+                                    @endif
+                                    @if($lesson->type === 'quiz' && $canEdit)
+                                        <a href="{{ route('admin.quiz.edit', $lesson) }}" class="text-xs text-indigo-500 hover:underline ml-2">Editar quiz</a>
+                                    @endif
+                                </div>
+                                @if($canEdit)
+                                <form method="POST" action="{{ route('admin.lessons.destroy', $lesson) }}"
+                                      onsubmit="return confirm('¿Eliminar lección?')">
+                                    @csrf @method('DELETE')
+                                    <button class="text-xs text-red-500 hover:underline">Eliminar</button>
+                                </form>
                                 @endif
                             </div>
-                            @if($canEdit)
-                            <form method="POST" action="{{ route('admin.lessons.destroy', $lesson) }}"
-                                  onsubmit="return confirm('¿Eliminar lección?')">
-                                @csrf @method('DELETE')
-                                <button class="text-xs text-red-500 hover:underline">Eliminar</button>
-                            </form>
+
+                            {{-- Recursos de esta lección --}}
+                            @if($lesson->resources->isNotEmpty() || $canEdit)
+                            <div class="px-4 pb-3 space-y-1" x-data="{ addingResource: false }">
+                                @foreach($lesson->resources as $res)
+                                <div class="flex items-center justify-between bg-gray-50 rounded px-3 py-1.5">
+                                    <div class="flex items-center gap-2 text-xs text-gray-600 min-w-0">
+                                        <span>{{ $res->type === 'file' ? '📎' : '🔗' }}</span>
+                                        <span class="truncate">{{ $res->name }}</span>
+                                        <span class="text-gray-400 shrink-0">({{ $res->sourceLabel() }})</span>
+                                    </div>
+                                    @if($canEdit)
+                                    <form method="POST" action="{{ route('admin.resources.destroy', $res) }}" class="ml-2 shrink-0">
+                                        @csrf @method('DELETE')
+                                        <button class="text-xs text-red-400 hover:text-red-600">×</button>
+                                    </form>
+                                    @endif
+                                </div>
+                                @endforeach
+
+                                @if($canEdit)
+                                <div>
+                                    <button @click="addingResource = !addingResource"
+                                            class="text-xs text-indigo-500 hover:underline mt-1">
+                                        + Añadir enlace
+                                    </button>
+                                    <form x-show="addingResource" method="POST"
+                                          action="{{ route('admin.lessons.resources.store', $lesson) }}"
+                                          class="mt-2 flex gap-2" style="display:none">
+                                        @csrf
+                                        <input type="text" name="name" placeholder="Nombre del recurso" required
+                                               class="flex-1 border border-gray-300 rounded px-2 py-1 text-xs focus:outline-none focus:ring-1 focus:ring-indigo-400">
+                                        <input type="url" name="url" placeholder="https://..." required
+                                               class="flex-1 border border-gray-300 rounded px-2 py-1 text-xs focus:outline-none focus:ring-1 focus:ring-indigo-400">
+                                        <button type="submit"
+                                                class="bg-indigo-600 text-white px-3 py-1 rounded text-xs hover:bg-indigo-700">
+                                            Añadir
+                                        </button>
+                                    </form>
+                                </div>
+                                @endif
+                            </div>
                             @endif
                         </li>
                     @endforeach

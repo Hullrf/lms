@@ -55,6 +55,10 @@ Route::middleware(['auth'])->prefix('admin')->name('admin.')->group(function () 
         // Colaboradores
         Route::post('courses/{course}/collaborators', [Admin\CollaboratorController::class, 'store'])->name('courses.collaborators.store');
         Route::delete('courses/{course}/collaborators/{user}', [Admin\CollaboratorController::class, 'destroy'])->name('courses.collaborators.destroy');
+
+        // Recursos de lecciones (enlaces externos)
+        Route::post('lessons/{lesson}/resources', [Admin\ResourceController::class, 'store'])->name('lessons.resources.store');
+        Route::delete('resources/{resource}', [Admin\ResourceController::class, 'destroy'])->name('resources.destroy');
     });
 });
 

@@ -121,21 +121,43 @@
             </div>
             @endif
 
-            {{-- Recursos descargables --}}
+            {{-- Recursos --}}
             @if($lesson->resources->count())
             <div class="bg-white border border-gray-200 rounded-xl p-4 mb-6">
                 <h3 class="font-semibold text-gray-800 mb-3">📎 Recursos</h3>
-                <ul class="space-y-2">
+                <div class="space-y-4">
                     @foreach($lesson->resources as $resource)
-                    <li>
-                        <a href="{{ Storage::url($resource->file_path) }}"
-                            download
-                            class="flex items-center gap-2 text-sm text-indigo-600 hover:underline">
-                            ⬇️ {{ $resource->name }}
-                        </a>
-                    </li>
+                        @if($resource->type === 'file')
+                            <a href="{{ Storage::url($resource->file_path) }}"
+                               download
+                               class="flex items-center gap-2 text-sm text-indigo-600 hover:underline">
+                                ⬇️ {{ $resource->name }}
+                            </a>
+                        @else
+                            @php $embedUrl = $resource->embedUrl(); @endphp
+                            @if($embedUrl)
+                                <div>
+                                    <p class="text-xs text-gray-500 mb-1 font-medium">{{ $resource->name }} <span class="text-gray-400">({{ $resource->sourceLabel() }})</span></p>
+                                    <div class="rounded-lg overflow-hidden border border-gray-200" style="aspect-ratio:16/9">
+                                        <iframe src="{{ $embedUrl }}"
+                                                class="w-full h-full"
+                                                frameborder="0"
+                                                allowfullscreen
+                                                allow="autoplay; encrypted-media"></iframe>
+                                    </div>
+                                </div>
+                            @else
+                                <a href="{{ $resource->url }}"
+                                   target="_blank"
+                                   rel="noopener noreferrer"
+                                   class="flex items-center gap-2 text-sm text-indigo-600 hover:underline">
+                                    🔗 {{ $resource->name }}
+                                    <span class="text-xs text-gray-400">({{ $resource->sourceLabel() }})</span>
+                                </a>
+                            @endif
+                        @endif
                     @endforeach
-                </ul>
+                </div>
             </div>
             @endif
 

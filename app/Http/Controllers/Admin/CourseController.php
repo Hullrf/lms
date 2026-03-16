@@ -131,7 +131,7 @@ class CourseController extends Controller
     public function show(Course $course)
     {
         $this->authorize('view', $course);
-        $course->load('modules.lessons', 'collaborators');
+        $course->load('modules.lessons.resources', 'collaborators');
 
         $enrollments   = $course->enrollments()->with('user')->get();
         $totalEnrolled = $enrollments->count();
