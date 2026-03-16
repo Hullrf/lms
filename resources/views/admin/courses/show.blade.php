@@ -3,15 +3,22 @@
 @section('title', $course->title)
 
 @section('content')
+@php $canEdit = $course->isEditableBy(auth()->user()); @endphp
+
 <div class="flex justify-between items-start mb-6">
     <div>
         <a href="{{ route('admin.courses.index') }}" class="text-sm text-indigo-600 hover:underline">← Cursos</a>
         <h2 class="text-xl font-bold text-gray-900 mt-1">{{ $course->title }}</h2>
+        @if(!$canEdit)
+            <span class="text-xs text-gray-400 italic mt-1 block">Solo lectura</span>
+        @endif
     </div>
+    @if($canEdit)
     <a href="{{ route('admin.courses.edit', $course) }}"
        class="bg-yellow-500 text-white px-4 py-2 rounded-lg text-sm hover:bg-yellow-600">
         Editar curso
     </a>
+    @endif
 </div>
 
 {{-- Módulos --}}
@@ -20,7 +27,8 @@
         <h3 class="font-semibold text-gray-800">Módulos y Lecciones</h3>
     </div>
 
-    {{-- Formulario nuevo módulo --}}
+    {{-- Formulario nuevo módulo (solo editores) --}}
+    @if($canEdit)
     <form method="POST" action="{{ route('admin.courses.modules.store', $course) }}"
           class="flex gap-3 mb-6 p-4 bg-gray-50 rounded-lg">
         @csrf
@@ -30,6 +38,7 @@
             + Añadir módulo
         </button>
     </form>
+    @endif
 
     {{-- Lista de módulos --}}
     <div class="space-y-4">
@@ -37,11 +46,13 @@
             <div class="border border-gray-200 rounded-lg overflow-hidden">
                 <div class="bg-gray-50 px-4 py-3 flex justify-between items-center">
                     <span class="font-medium text-gray-800">{{ $module->title }}</span>
+                    @if($canEdit)
                     <form method="POST" action="{{ route('admin.modules.destroy', $module) }}"
                           onsubmit="return confirm('¿Eliminar módulo y todas sus lecciones?')">
                         @csrf @method('DELETE')
                         <button class="text-xs text-red-500 hover:underline">Eliminar</button>
                     </form>
+                    @endif
                 </div>
 
                 {{-- Lecciones --}}
@@ -54,20 +65,23 @@
                                 @if($lesson->is_preview)
                                     <span class="text-xs text-green-600 font-medium">Preview</span>
                                 @endif
-                                @if($lesson->type === 'quiz')
+                                @if($lesson->type === 'quiz' && $canEdit)
                                     <a href="{{ route('admin.quiz.edit', $lesson) }}" class="text-xs text-indigo-500 hover:underline ml-2">Editar quiz</a>
                                 @endif
                             </div>
+                            @if($canEdit)
                             <form method="POST" action="{{ route('admin.lessons.destroy', $lesson) }}"
                                   onsubmit="return confirm('¿Eliminar lección?')">
                                 @csrf @method('DELETE')
                                 <button class="text-xs text-red-500 hover:underline">Eliminar</button>
                             </form>
+                            @endif
                         </li>
                     @endforeach
                 </ul>
 
-                {{-- Formulario nueva lección --}}
+                {{-- Formulario nueva lección (solo editores) --}}
+                @if($canEdit)
                 <form method="POST" action="{{ route('admin.modules.lessons.store', $module) }}"
                       class="p-3 bg-gray-50 border-t border-gray-100 flex gap-2">
                     @csrf
@@ -85,9 +99,12 @@
                         Añadir
                     </button>
                 </form>
+                @endif
             </div>
         @empty
-            <p class="text-sm text-gray-400 text-center py-4">Aún no hay módulos. Agrega uno arriba.</p>
+            <p class="text-sm text-gray-400 text-center py-4">
+                @if($canEdit) Aún no hay módulos. Agrega uno arriba. @else Este curso no tiene módulos aún. @endif
+            </p>
         @endforelse
     </div>
 </div>
