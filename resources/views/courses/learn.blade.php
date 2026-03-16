@@ -20,10 +20,10 @@
             <div class="mt-2">
                 <div class="flex justify-between text-xs text-gray-500 mb-1">
                     <span>Progreso del curso</span>
-                    <span>{{ $enrollment->progress }}%</span>
+                    <span id="progress-label">{{ $enrollment->progress }}%</span>
                 </div>
                 <div class="w-full bg-gray-200 rounded-full h-1.5">
-                    <div class="bg-indigo-600 h-1.5 rounded-full" style="width: {{ $enrollment->progress }}%"></div>
+                    <div id="progress-bar" class="bg-indigo-600 h-1.5 rounded-full" style="width: {{ $enrollment->progress }}%"></div>
                 </div>
             </div>
             @endif
@@ -43,25 +43,26 @@
             $isLocked = !$item->is_preview && $itemIndex > 0 && !$allLessons[$itemIndex - 1]->isCompletedBy(auth()->user()) && !$isCompleted;
             @endphp
             @if($isLocked)
-            <div class="flex items-center gap-3 px-4 py-2.5 text-sm border-l-4 border-transparent text-gray-400 cursor-not-allowed select-none">
-                <span class="flex-shrink-0">🔒</span>
+            <div class="flex items-center gap-2 px-4 py-2.5 text-sm border-l-4 border-transparent text-gray-400 cursor-not-allowed select-none">
+                <span class="w-4 h-4 flex-shrink-0 text-center text-xs">🔒</span>
                 <span class="line-clamp-2">{{ $item->title }}</span>
             </div>
             @else
-            <a href="{{ route('lesson.show', [$course->slug, $item->slug]) }}"
-                class="flex items-center gap-3 px-4 py-2.5 text-sm border-l-4 transition
-                      {{ $isActive ? 'border-indigo-600 bg-indigo-50 text-indigo-700 font-medium' : 'border-transparent text-gray-700 hover:bg-gray-50' }}">
-                <span class="flex-shrink-0">
-                    @if($isCompleted)
-                    <span class="text-green-500">✓</span>
-                    @elseif($isActive)
-                    <span class="text-indigo-600">▶</span>
-                    @else
-                    <span class="text-gray-400">○</span>
-                    @endif
-                </span>
-                <span class="line-clamp-2">{{ $item->title }}</span>
-            </a>
+            <div class="flex items-center gap-2 px-3 py-2.5 border-l-4 transition
+                        {{ $isActive ? 'border-indigo-600 bg-indigo-50' : 'border-transparent hover:bg-gray-50' }}">
+                <input type="checkbox"
+                       data-lesson="{{ $item->id }}"
+                       data-course="{{ $course->slug }}"
+                       data-slug="{{ $item->slug }}"
+                       {{ $isCompleted ? 'checked' : '' }}
+                       {{ $isCompleted ? 'disabled' : '' }}
+                       class="lesson-check flex-shrink-0 w-4 h-4 rounded cursor-pointer accent-indigo-600 disabled:opacity-60"
+                       title="{{ $isCompleted ? 'Completada' : 'Marcar como completada' }}">
+                <a href="{{ route('lesson.show', [$course->slug, $item->slug]) }}"
+                   class="flex-1 text-sm line-clamp-2 {{ $isActive ? 'text-indigo-700 font-medium' : 'text-gray-700' }}">
+                    {{ $item->title }}
+                </a>
+            </div>
             @endif
             @endforeach
         </div>
@@ -179,23 +180,27 @@
                     </form>
                 @endif
 
-            {{-- Lección normal --}}
+            {{-- Lección normal: indicador de estado --}}
             @else
-                <button id="btn-complete"
-                    onclick="markComplete({{ $lesson->id }})"
-                    class="{{ ($progress && $progress->completed) ? 'bg-green-600 cursor-default' : 'bg-indigo-600 hover:bg-indigo-700' }} text-white px-6 py-3 rounded-lg font-medium transition">
-                    {{ ($progress && $progress->completed) ? '✓ Lección completada' : 'Marcar como completada' }}
-                </button>
+                @if($progress && $progress->completed)
+                    <p id="lesson-status" class="text-sm text-green-600 font-medium flex items-center gap-2">
+                        <span>✓</span> Lección marcada como completada
+                    </p>
+                @else
+                    <p id="lesson-status" class="text-xs text-gray-400">Marca la lección como completada usando el checkbox en el panel lateral.</p>
+                @endif
             @endif
         </div>
     </main>
 </div>
 
 <script>
-    async function markComplete(lessonId) {
-        const btn = document.getElementById('btn-complete');
-        btn.disabled = true;
-        btn.textContent = 'Guardando...';
+document.querySelectorAll('.lesson-check').forEach(checkbox => {
+    checkbox.addEventListener('change', async function () {
+        if (!this.checked) return;
+
+        this.disabled = true;
+        const lessonId = this.dataset.lesson;
 
         try {
             const res = await fetch(`/progress/${lessonId}`, {
@@ -204,18 +209,30 @@
                     'Content-Type': 'application/json',
                     'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content
                 },
-                body: JSON.stringify({
-                    completed: true
-                })
+                body: JSON.stringify({ completed: true })
             });
+
             const data = await res.json();
-            btn.textContent = '✓ Lección completada';
-            btn.classList.replace('bg-indigo-600', 'bg-green-600');
-            btn.classList.remove('hover:bg-indigo-700');
+
+            // Actualizar barra de progreso del sidebar
+            const bar = document.getElementById('progress-bar');
+            const label = document.getElementById('progress-label');
+            if (bar) bar.style.width = data.progress + '%';
+            if (label) label.textContent = data.progress + '%';
+
+            // Si la lección actual fue marcada, actualizar el indicador de estado
+            if (lessonId == '{{ $lesson->id }}') {
+                const status = document.getElementById('lesson-status');
+                if (status) {
+                    status.innerHTML = '<span>✓</span> Lección marcada como completada';
+                    status.className = 'text-sm text-green-600 font-medium flex items-center gap-2';
+                }
+            }
         } catch (e) {
-            btn.disabled = false;
-            btn.textContent = 'Marcar como completada';
+            this.checked = false;
+            this.disabled = false;
         }
-    }
+    });
+});
 </script>
 @endsection
