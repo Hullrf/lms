@@ -21,11 +21,11 @@
                     <a href="{{ route('courses.index') }}" class="text-sm text-gray-600 hover:text-indigo-600">Cursos</a>
                     {{-- Botón hamburguesa --}}
                     <button @click="open = true"
-                            class="flex flex-col justify-center items-center w-9 h-9 rounded-lg hover:bg-gray-100 transition gap-1.5"
+                            class="w-9 h-9 flex items-center justify-center rounded-lg hover:bg-gray-100 transition"
                             aria-label="Menú">
-                        <span class="block w-5 h-0.5 bg-gray-600"></span>
-                        <span class="block w-5 h-0.5 bg-gray-600"></span>
-                        <span class="block w-5 h-0.5 bg-gray-600"></span>
+                        <svg xmlns="http://www.w3.org/2000/svg" class="w-5 h-5 text-gray-600" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                            <path stroke-linecap="round" stroke-linejoin="round" d="M4 6h16M4 12h16M4 18h16"/>
+                        </svg>
                     </button>
                 </div>
             </div>
