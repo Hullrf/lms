@@ -41,7 +41,7 @@ class CourseController extends Controller
         $editableCourseIds = auth()->user()->isAdmin()
             ? null
             : Course::where('instructor_id', auth()->id())->pluck('id')
-                ->merge(auth()->user()->collaboratingCourses()->pluck('id'));
+                ->merge(auth()->user()->collaboratingCourses()->pluck('courses.id'));
 
         return view('admin.courses.index', compact('grouped', 'editableCourseIds'));
     }
