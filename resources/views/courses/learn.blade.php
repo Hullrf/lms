@@ -44,24 +44,25 @@
             @endphp
             @if($isLocked)
             <div class="flex items-center gap-2 px-4 py-2.5 text-sm border-l-4 border-transparent text-gray-400 cursor-not-allowed select-none">
-                <span class="w-4 h-4 flex-shrink-0 text-center text-xs">🔒</span>
+                <span class="flex-shrink-0 text-xs">🔒</span>
                 <span class="line-clamp-2">{{ $item->title }}</span>
             </div>
             @else
             <div class="flex items-center gap-2 px-3 py-2.5 border-l-4 transition
                         {{ $isActive ? 'border-indigo-600 bg-indigo-50' : 'border-transparent hover:bg-gray-50' }}">
-                <input type="checkbox"
-                       data-lesson="{{ $item->id }}"
-                       data-course="{{ $course->slug }}"
-                       data-slug="{{ $item->slug }}"
-                       {{ $isCompleted ? 'checked' : '' }}
-                       {{ $isCompleted ? 'disabled' : '' }}
-                       class="lesson-check flex-shrink-0 w-4 h-4 rounded cursor-pointer accent-indigo-600 disabled:opacity-60"
-                       title="{{ $isCompleted ? 'Completada' : 'Marcar como completada' }}">
+                <span class="flex-shrink-0 text-xs">
+                    {{ $item->type === 'video' ? '▶️' : ($item->type === 'quiz' ? '📝' : '📄') }}
+                </span>
                 <a href="{{ route('lesson.show', [$course->slug, $item->slug]) }}"
                    class="flex-1 text-sm line-clamp-2 {{ $isActive ? 'text-indigo-700 font-medium' : 'text-gray-700' }}">
                     {{ $item->title }}
                 </a>
+                <input type="checkbox"
+                       data-lesson="{{ $item->id }}"
+                       {{ $isCompleted ? 'checked' : '' }}
+                       {{ $isCompleted ? 'disabled' : '' }}
+                       class="lesson-check flex-shrink-0 w-4 h-4 rounded cursor-pointer accent-indigo-600 disabled:opacity-60"
+                       title="{{ $isCompleted ? 'Completada' : 'Marcar como completada' }}">
             </div>
             @endif
             @endforeach
