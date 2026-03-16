@@ -31,13 +31,18 @@ Route::middleware(['auth'])->prefix('admin')->name('admin.')->group(function () 
 
     // Solo administradores
     Route::middleware('admin')->group(function () {
-        Route::get('/', [Admin\DashboardController::class, 'index'])->name('dashboard');
         Route::resource('users', Admin\UserController::class);
-        Route::resource('categories', Admin\CategoryController::class);
+        // Categorías: solo admins pueden crear/editar/eliminar
+        Route::post('categories', [Admin\CategoryController::class, 'store'])->name('categories.store');
+        Route::patch('categories/{category}', [Admin\CategoryController::class, 'update'])->name('categories.update');
+        Route::delete('categories/{category}', [Admin\CategoryController::class, 'destroy'])->name('categories.destroy');
     });
 
-    // Administradores e instructores (la policy controla ownership)
+    // Administradores e instructores
     Route::middleware('instructor.or.admin')->group(function () {
+        Route::get('/', [Admin\DashboardController::class, 'index'])->name('dashboard');
+        // Categorías: todos pueden ver
+        Route::get('categories', [Admin\CategoryController::class, 'index'])->name('categories.index');
         Route::resource('courses', Admin\CourseController::class);
         Route::resource('courses.modules', Admin\ModuleController::class)->shallow();
         Route::resource('modules.lessons', Admin\LessonController::class)->shallow();
@@ -48,6 +53,10 @@ Route::middleware(['auth'])->prefix('admin')->name('admin.')->group(function () 
         Route::delete('quiz-questions/{question}', [Admin\QuizController::class, 'destroyQuestion'])->name('quiz.questions.destroy');
         Route::post('quiz-questions/{question}/options', [Admin\QuizController::class, 'storeOption'])->name('quiz.options.store');
         Route::delete('quiz-options/{option}', [Admin\QuizController::class, 'destroyOption'])->name('quiz.options.destroy');
+
+        // Colaboradores
+        Route::post('courses/{course}/collaborators', [Admin\CollaboratorController::class, 'store'])->name('courses.collaborators.store');
+        Route::delete('courses/{course}/collaborators/{user}', [Admin\CollaboratorController::class, 'destroy'])->name('courses.collaborators.destroy');
     });
 });
 

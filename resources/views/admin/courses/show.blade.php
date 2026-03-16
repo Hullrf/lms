@@ -92,6 +92,41 @@
     </div>
 </div>
 
+{{-- ── Colaboradores ────────────────────────────────────────── --}}
+@php $isOwner = auth()->id() === $course->instructor_id || auth()->user()->isAdmin(); @endphp
+<div class="bg-white rounded-xl shadow-sm border border-gray-200 p-6 mb-6">
+    <h3 class="font-semibold text-gray-800 mb-4">Colaboradores</h3>
+
+    @if($course->collaborators->isEmpty())
+        <p class="text-sm text-gray-400 mb-4">Este curso no tiene colaboradores.</p>
+    @else
+        <div class="flex flex-wrap gap-2 mb-4">
+            @foreach($course->collaborators as $collab)
+            <div class="flex items-center gap-2 bg-indigo-50 border border-indigo-200 rounded-full px-3 py-1">
+                <span class="text-sm text-indigo-700">{{ $collab->name }}</span>
+                @if($isOwner)
+                <form method="POST" action="{{ route('admin.courses.collaborators.destroy', [$course, $collab]) }}">
+                    @csrf @method('DELETE')
+                    <button class="text-indigo-400 hover:text-red-500 text-xs font-bold leading-none">×</button>
+                </form>
+                @endif
+            </div>
+            @endforeach
+        </div>
+    @endif
+
+    @if($isOwner)
+    <form method="POST" action="{{ route('admin.courses.collaborators.store', $course) }}" class="flex gap-3">
+        @csrf
+        <input type="email" name="email" placeholder="Email del instructor colaborador..." required
+               class="flex-1 border border-gray-300 rounded-lg px-4 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-400">
+        <button type="submit" class="bg-indigo-600 text-white px-4 py-2 rounded-lg text-sm hover:bg-indigo-700">
+            Añadir colaborador
+        </button>
+    </form>
+    @endif
+</div>
+
 {{-- ── Panel de estadísticas ─────────────────────────────────── --}}
 <div class="mt-8">
     <h3 class="text-lg font-bold text-gray-800 mb-4">Estadísticas del curso</h3>

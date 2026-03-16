@@ -58,6 +58,16 @@ class Course extends Model
     public function certificates() { return $this->hasMany(Certificate::class); }
     public function reviews()      { return $this->hasMany(Review::class); }
 
+    public function collaborators() {
+        return $this->belongsToMany(User::class, 'course_collaborators');
+    }
+
+    public function isEditableBy(User $user): bool {
+        return $user->isAdmin()
+            || $this->instructor_id === $user->id
+            || $this->collaborators()->where('user_id', $user->id)->exists();
+    }
+
     // Helpers
     public function isEnrolledBy(User $user): bool {
         return $this->enrollments()->where('user_id', $user->id)->exists();

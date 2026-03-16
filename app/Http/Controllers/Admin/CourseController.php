@@ -15,13 +15,16 @@ class CourseController extends Controller
     {
         $this->authorize('viewAny', Course::class);
 
-        $courses = auth()->user()->isAdmin()
-            ? Course::with('instructor', 'category')->latest()->paginate(15)
-            : Course::with('instructor', 'category')
-                    ->where('instructor_id', auth()->id())
-                    ->latest()->paginate(15);
+        // Todos los cursos son visibles; la policy controla quién puede editarlos
+        $courses = Course::with('instructor', 'category')->latest()->paginate(15);
 
-        return view('admin.courses.index', compact('courses'));
+        // IDs de cursos que el instructor puede editar (propios + colaboraciones)
+        $editableCourseIds = auth()->user()->isAdmin()
+            ? null  // null = todos
+            : Course::where('instructor_id', auth()->id())->pluck('id')
+                ->merge(auth()->user()->collaboratingCourses()->pluck('id'));
+
+        return view('admin.courses.index', compact('courses', 'editableCourseIds'));
     }
 
     public function create()
@@ -109,7 +112,7 @@ class CourseController extends Controller
     public function show(Course $course)
     {
         $this->authorize('view', $course);
-        $course->load('modules.lessons');
+        $course->load('modules.lessons', 'collaborators');
 
         $enrollments   = $course->enrollments()->with('user')->get();
         $totalEnrolled = $enrollments->count();

@@ -9,11 +9,16 @@ use App\Models\Enrollment;
 use App\Models\Order;
 use App\Models\User;
 use Illuminate\Support\Carbon;
+use Illuminate\Support\Collection;
 
 class DashboardController extends Controller
 {
     public function index()
     {
+        if (auth()->user()->isInstructor()) {
+            return $this->instructorDashboard();
+        }
+
         // ── Tarjetas resumen ──────────────────────────────────────────
         $stats = [
             'total_courses'     => Course::count(),
@@ -73,6 +78,50 @@ class DashboardController extends Controller
             'byCategory',
             'byRole',
             'topCourses',
+        ));
+    }
+
+    private function instructorDashboard()
+    {
+        $user      = auth()->user();
+        $courseIds = Course::where('instructor_id', $user->id)->pluck('id');
+
+        $stats = [
+            'my_courses'     => $courseIds->count(),
+            'total_students' => Enrollment::whereIn('course_id', $courseIds)->distinct('user_id')->count('user_id'),
+            'total_revenue'  => Order::whereIn('course_id', $courseIds)->where('status', 'paid')->sum('amount'),
+            'avg_progress'   => (int) round(Enrollment::whereIn('course_id', $courseIds)->avg('progress') ?? 0),
+        ];
+
+        $months = collect(range(5, 0))->map(fn($i) => now()->subMonths($i)->format('Y-m'));
+
+        $enrollmentsRaw = Enrollment::selectRaw('DATE_FORMAT(enrolled_at, "%Y-%m") as month, COUNT(*) as total')
+            ->whereIn('course_id', $courseIds)
+            ->where('enrolled_at', '>=', now()->subMonths(6)->startOfMonth())
+            ->groupBy('month')
+            ->pluck('total', 'month');
+
+        $monthLabels      = $months->map(fn($m) => Carbon::parse($m)->translatedFormat('M Y'))->values();
+        $enrollmentSeries = $months->map(fn($m) => (int) ($enrollmentsRaw[$m] ?? 0))->values();
+
+        $topCourses = Course::where('instructor_id', $user->id)
+            ->withCount('enrollments')
+            ->orderByDesc('enrollments_count')
+            ->take(5)
+            ->get();
+
+        $recentEnrollments = Enrollment::with('user', 'course')
+            ->whereIn('course_id', $courseIds)
+            ->latest('enrolled_at')
+            ->take(10)
+            ->get();
+
+        return view('admin.instructor-dashboard', compact(
+            'stats',
+            'monthLabels',
+            'enrollmentSeries',
+            'topCourses',
+            'recentEnrollments',
         ));
     }
 }

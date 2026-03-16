@@ -27,13 +27,15 @@
                 class="flex items-center gap-3 px-3 py-2 rounded-lg text-sm {{ request()->routeIs('admin.courses*') ? 'bg-indigo-600 text-white' : 'text-gray-300 hover:bg-gray-800' }}">
                 📚 Cursos
             </a>
+            @if(auth()->user()->isAdmin())
             <a href="{{ route('admin.users.index') }}"
                 class="flex items-center gap-3 px-3 py-2 rounded-lg text-sm {{ request()->routeIs('admin.users*') ? 'bg-indigo-600 text-white' : 'text-gray-300 hover:bg-gray-800' }}">
                 👥 Usuarios
             </a>
+            @endif
             <a href="{{ route('admin.categories.index') }}"
                 class="flex items-center gap-3 px-3 py-2 rounded-lg text-sm {{ request()->routeIs('admin.categories*') ? 'bg-indigo-600 text-white' : 'text-gray-300 hover:bg-gray-800' }}">
-                🏷️ Categorías
+                🏷️ Categorías @if(auth()->user()->isInstructor())<span class="text-xs text-gray-500">(solo lectura)</span>@endif
             </a>
         </nav>
         <div class="p-4 border-t border-gray-700">

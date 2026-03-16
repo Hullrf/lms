@@ -14,7 +14,8 @@ class CoursePolicy
 
     public function view(User $user, Course $course): bool
     {
-        return $user->isAdmin() || $course->instructor_id === $user->id;
+        // Todos los instructores pueden ver cualquier curso
+        return $user->isAdmin() || $user->isInstructor();
     }
 
     public function create(User $user): bool
@@ -24,11 +25,13 @@ class CoursePolicy
 
     public function update(User $user, Course $course): bool
     {
-        return $user->isAdmin() || $course->instructor_id === $user->id;
+        // Dueño, colaboradores y admins pueden editar
+        return $course->isEditableBy($user);
     }
 
     public function delete(User $user, Course $course): bool
     {
+        // Solo el dueño y los admins pueden eliminar
         return $user->isAdmin() || $course->instructor_id === $user->id;
     }
 }

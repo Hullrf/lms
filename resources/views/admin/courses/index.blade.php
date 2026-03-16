@@ -42,16 +42,25 @@
                             {{ $labels[$course->status] }}
                         </span>
                     </td>
-                    <td class="px-6 py-4 flex gap-3">
-                        <a href="{{ route('admin.courses.show', $course) }}"
-                           class="text-indigo-600 hover:underline text-xs">Ver</a>
-                        <a href="{{ route('admin.courses.edit', $course) }}"
-                           class="text-yellow-600 hover:underline text-xs">Editar</a>
-                        <form method="POST" action="{{ route('admin.courses.destroy', $course) }}"
-                              onsubmit="return confirm('¿Eliminar este curso?')">
-                            @csrf @method('DELETE')
-                            <button class="text-red-500 hover:underline text-xs">Eliminar</button>
-                        </form>
+                    <td class="px-6 py-4">
+                        @php $canEdit = is_null($editableCourseIds) || $editableCourseIds->contains($course->id); @endphp
+                        <div class="flex gap-3 items-center">
+                            <a href="{{ route('admin.courses.show', $course) }}"
+                               class="text-indigo-600 hover:underline text-xs">Ver</a>
+                            @if($canEdit)
+                                <a href="{{ route('admin.courses.edit', $course) }}"
+                                   class="text-yellow-600 hover:underline text-xs">Editar</a>
+                                @if(is_null($editableCourseIds) || $course->instructor_id === auth()->id())
+                                    <form method="POST" action="{{ route('admin.courses.destroy', $course) }}"
+                                          onsubmit="return confirm('¿Eliminar este curso?')">
+                                        @csrf @method('DELETE')
+                                        <button class="text-red-500 hover:underline text-xs">Eliminar</button>
+                                    </form>
+                                @endif
+                            @else
+                                <span class="text-xs text-gray-400 italic">Solo lectura</span>
+                            @endif
+                        </div>
                     </td>
                 </tr>
             @endforeach

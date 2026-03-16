@@ -42,6 +42,10 @@ class User extends Authenticatable
                     ->withTimestamps();
     }
 
+    public function collaboratingCourses() {
+        return $this->belongsToMany(Course::class, 'course_collaborators');
+    }
+
     public function isEnrolledIn(Course $course): bool {
         return $this->enrollments()->where('course_id', $course->id)->exists();
     }
