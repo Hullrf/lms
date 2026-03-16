@@ -91,4 +91,165 @@
         @endforelse
     </div>
 </div>
+
+{{-- ── Panel de estadísticas ─────────────────────────────────── --}}
+<div class="mt-8">
+    <h3 class="text-lg font-bold text-gray-800 mb-4">Estadísticas del curso</h3>
+
+    {{-- Tarjetas resumen --}}
+    <div class="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
+        <div class="bg-white rounded-xl border border-gray-200 p-4 shadow-sm">
+            <p class="text-xs text-gray-500">Estudiantes inscritos</p>
+            <p class="text-3xl font-bold text-indigo-600 mt-1">{{ $totalEnrolled }}</p>
+        </div>
+        <div class="bg-white rounded-xl border border-gray-200 p-4 shadow-sm">
+            <p class="text-xs text-gray-500">Han completado</p>
+            <p class="text-3xl font-bold text-green-600 mt-1">{{ $totalCompleted }}</p>
+        </div>
+        <div class="bg-white rounded-xl border border-gray-200 p-4 shadow-sm">
+            <p class="text-xs text-gray-500">Progreso promedio</p>
+            <p class="text-3xl font-bold text-blue-600 mt-1">{{ $avgProgress }}%</p>
+        </div>
+        <div class="bg-white rounded-xl border border-gray-200 p-4 shadow-sm">
+            <p class="text-xs text-gray-500">Tasa de finalización</p>
+            <p class="text-3xl font-bold text-purple-600 mt-1">{{ $completionRate }}%</p>
+        </div>
+    </div>
+
+    {{-- Gráficos --}}
+    <div class="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-6">
+
+        {{-- Matrículas por mes --}}
+        <div class="bg-white rounded-xl border border-gray-200 p-6 shadow-sm">
+            <h4 class="text-sm font-semibold text-gray-700 mb-4">Matrículas — últimos 6 meses</h4>
+            <canvas id="chartCourseEnrollments" height="140"></canvas>
+        </div>
+
+        {{-- Distribución de progreso --}}
+        <div class="bg-white rounded-xl border border-gray-200 p-6 shadow-sm">
+            <h4 class="text-sm font-semibold text-gray-700 mb-4">Distribución de progreso</h4>
+            @if($totalEnrolled > 0)
+                <canvas id="chartProgressDist" height="140"></canvas>
+            @else
+                <p class="text-sm text-gray-400 text-center py-10">Sin estudiantes inscritos aún.</p>
+            @endif
+        </div>
+    </div>
+
+    {{-- Completación por lección --}}
+    @if($lessonStats->isNotEmpty())
+    <div class="bg-white rounded-xl border border-gray-200 p-6 shadow-sm mb-6">
+        <h4 class="text-sm font-semibold text-gray-700 mb-4">Completación por lección</h4>
+        <div class="space-y-3">
+            @foreach($lessonStats as $stat)
+            <div>
+                <div class="flex justify-between text-xs text-gray-600 mb-1">
+                    <span class="flex items-center gap-1">
+                        {{ $stat['type'] === 'video' ? '▶️' : ($stat['type'] === 'quiz' ? '📝' : '📄') }}
+                        {{ $stat['title'] }}
+                    </span>
+                    <span class="font-medium">{{ $stat['rate'] }}% ({{ $stat['completed'] }}/{{ $totalEnrolled }})</span>
+                </div>
+                <div class="w-full bg-gray-100 rounded-full h-2">
+                    <div class="h-2 rounded-full {{ $stat['rate'] >= 70 ? 'bg-green-500' : ($stat['rate'] >= 40 ? 'bg-yellow-400' : 'bg-red-400') }}"
+                         style="width: {{ $stat['rate'] }}%"></div>
+                </div>
+            </div>
+            @endforeach
+        </div>
+    </div>
+    @endif
+
+    {{-- Tabla de estudiantes --}}
+    @if($studentStats->isNotEmpty())
+    <div class="bg-white rounded-xl border border-gray-200 shadow-sm overflow-hidden">
+        <div class="px-6 py-4 border-b border-gray-100">
+            <h4 class="text-sm font-semibold text-gray-700">Estudiantes inscritos</h4>
+        </div>
+        <table class="w-full text-sm">
+            <thead class="bg-gray-50 text-gray-500 text-xs">
+                <tr>
+                    <th class="px-6 py-3 text-left">Estudiante</th>
+                    <th class="px-6 py-3 text-left">Progreso</th>
+                    <th class="px-6 py-3 text-left">Inscrito el</th>
+                    <th class="px-6 py-3 text-left">Estado</th>
+                </tr>
+            </thead>
+            <tbody class="divide-y divide-gray-100">
+                @foreach($studentStats as $enrollment)
+                <tr class="hover:bg-gray-50">
+                    <td class="px-6 py-3 font-medium text-gray-800">{{ $enrollment->user->name }}</td>
+                    <td class="px-6 py-3">
+                        <div class="flex items-center gap-2">
+                            <div class="w-28 bg-gray-200 rounded-full h-1.5">
+                                <div class="h-1.5 rounded-full {{ $enrollment->progress === 100 ? 'bg-green-500' : 'bg-indigo-500' }}"
+                                     style="width: {{ $enrollment->progress }}%"></div>
+                            </div>
+                            <span class="text-xs text-gray-500">{{ $enrollment->progress }}%</span>
+                        </div>
+                    </td>
+                    <td class="px-6 py-3 text-gray-500">{{ $enrollment->enrolled_at->format('d/m/Y') }}</td>
+                    <td class="px-6 py-3">
+                        @if($enrollment->progress === 100)
+                            <span class="text-xs bg-green-100 text-green-700 px-2 py-0.5 rounded-full font-medium">Completado</span>
+                        @elseif($enrollment->progress > 0)
+                            <span class="text-xs bg-blue-100 text-blue-700 px-2 py-0.5 rounded-full font-medium">En progreso</span>
+                        @else
+                            <span class="text-xs bg-gray-100 text-gray-500 px-2 py-0.5 rounded-full font-medium">Sin iniciar</span>
+                        @endif
+                    </td>
+                </tr>
+                @endforeach
+            </tbody>
+        </table>
+    </div>
+    @endif
+</div>
+
 @endsection
+
+@push('scripts')
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.3/dist/chart.umd.min.js"></script>
+<script>
+new Chart(document.getElementById('chartCourseEnrollments'), {
+    type: 'line',
+    data: {
+        labels: @json($monthLabels),
+        datasets: [{
+            label: 'Matrículas',
+            data: @json($enrollmentSeries),
+            borderColor: '#6366f1',
+            backgroundColor: 'rgba(99,102,241,0.1)',
+            borderWidth: 2,
+            pointRadius: 4,
+            fill: true,
+            tension: 0.4,
+        }]
+    },
+    options: {
+        plugins: { legend: { display: false } },
+        scales: { y: { beginAtZero: true, ticks: { precision: 0 } } }
+    }
+});
+
+@if($totalEnrolled > 0)
+new Chart(document.getElementById('chartProgressDist'), {
+    type: 'doughnut',
+    data: {
+        labels: @json(array_keys($progressGroups)),
+        datasets: [{
+            data: @json(array_values($progressGroups)),
+            backgroundColor: ['#e5e7eb','#93c5fd','#fbbf24','#818cf8','#34d399'],
+            borderWidth: 2,
+        }]
+    },
+    options: {
+        cutout: '60%',
+        plugins: {
+            legend: { position: 'bottom', labels: { boxWidth: 12, font: { size: 11 } } }
+        }
+    }
+});
+@endif
+</script>
+@endpush

@@ -6,6 +6,7 @@ use App\Http\Controllers\Controller;
 use App\Models\Course;
 use App\Models\Category;
 use Illuminate\Http\Request;
+use Illuminate\Support\Carbon;
 use Illuminate\Support\Str;
 
 class CourseController extends Controller
@@ -109,6 +110,60 @@ class CourseController extends Controller
     {
         $this->authorize('view', $course);
         $course->load('modules.lessons');
-        return view('admin.courses.show', compact('course'));
+
+        $enrollments   = $course->enrollments()->with('user')->get();
+        $totalEnrolled = $enrollments->count();
+        $totalCompleted = $enrollments->where('progress', 100)->count();
+        $avgProgress   = $totalEnrolled > 0 ? (int) round($enrollments->avg('progress')) : 0;
+        $completionRate = $totalEnrolled > 0 ? (int) round($totalCompleted / $totalEnrolled * 100) : 0;
+
+        // Distribución de progreso
+        $progressGroups = [
+            'Sin iniciar'   => $enrollments->where('progress', 0)->count(),
+            'Iniciado'      => $enrollments->filter(fn($e) => $e->progress >= 1  && $e->progress <= 25)->count(),
+            'En progreso'   => $enrollments->filter(fn($e) => $e->progress >= 26 && $e->progress <= 75)->count(),
+            'Avanzado'      => $enrollments->filter(fn($e) => $e->progress >= 76 && $e->progress <= 99)->count(),
+            'Completado'    => $enrollments->where('progress', 100)->count(),
+        ];
+
+        // Matrículas por mes (últimos 6 meses)
+        $months = collect(range(5, 0))->map(fn($i) => now()->subMonths($i)->format('Y-m'));
+        $enrollmentsRaw = $course->enrollments()
+            ->selectRaw('DATE_FORMAT(enrolled_at, "%Y-%m") as month, COUNT(*) as total')
+            ->where('enrolled_at', '>=', now()->subMonths(6)->startOfMonth())
+            ->groupBy('month')
+            ->pluck('total', 'month');
+
+        $monthLabels      = $months->map(fn($m) => Carbon::parse($m)->translatedFormat('M Y'))->values();
+        $enrollmentSeries = $months->map(fn($m) => (int) ($enrollmentsRaw[$m] ?? 0))->values();
+
+        // Tasa de completación por lección
+        $lessonStats = $course->modules->flatMap(function ($module) use ($totalEnrolled) {
+            return $module->lessons->map(function ($lesson) use ($totalEnrolled) {
+                $completed = $lesson->progressRecords()->where('completed', true)->count();
+                return [
+                    'title'     => $lesson->title,
+                    'type'      => $lesson->type,
+                    'completed' => $completed,
+                    'rate'      => $totalEnrolled > 0 ? (int) round($completed / $totalEnrolled * 100) : 0,
+                ];
+            });
+        });
+
+        // Lista de estudiantes ordenada por progreso
+        $studentStats = $enrollments->sortByDesc('progress')->values();
+
+        return view('admin.courses.show', compact(
+            'course',
+            'totalEnrolled',
+            'totalCompleted',
+            'avgProgress',
+            'completionRate',
+            'progressGroups',
+            'monthLabels',
+            'enrollmentSeries',
+            'lessonStats',
+            'studentStats',
+        ));
     }
 }
