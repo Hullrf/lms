@@ -8,7 +8,7 @@
 
     {{-- Sidebar del curso --}}
     <aside class="bg-white border-r border-gray-200 flex-shrink-0 overflow-hidden transition-all duration-300"
-           :class="sidebarOpen ? 'w-80' : 'w-0 border-r-0'">
+           :style="sidebarOpen ? 'width:320px' : 'width:0; border-right:none'">
         <div class="w-80 h-full overflow-y-auto">
         <div class="p-4 border-b border-gray-200">
             <a href="{{ route('courses.show', $course->slug) }}"
@@ -79,7 +79,7 @@
             :style="sidebarOpen ? 'left: 320px' : 'left: 0px'"
             :title="sidebarOpen ? 'Ocultar panel' : 'Mostrar panel'">
         <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4 text-gray-500 transition-transform duration-300"
-             :class="sidebarOpen ? '' : 'rotate-180'"
+             :style="sidebarOpen ? '' : 'transform: rotate(180deg)'"
              fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5">
             <path stroke-linecap="round" stroke-linejoin="round" d="M15 19l-7-7 7-7"/>
         </svg>
