@@ -19,8 +19,10 @@
                     <a href="{{ route('courses.index') }}" class="text-sm text-gray-600 hover:text-indigo-600">Cursos</a>
                     @auth
                         <a href="{{ route('dashboard') }}" class="text-sm text-gray-600 hover:text-indigo-600">Mi aprendizaje</a>
-                        @if(auth()->user()->isAdmin())
-                            <a href="{{ route('admin.dashboard') }}" class="text-sm text-indigo-600 font-medium">Admin</a>
+                        @if(auth()->user()->isAdmin() || auth()->user()->isInstructor())
+                            <a href="{{ route('admin.dashboard') }}" class="text-sm text-indigo-600 font-medium">
+                                {{ auth()->user()->isAdmin() ? 'Admin' : 'Mi panel' }}
+                            </a>
                         @endif
                         <form method="POST" action="{{ route('logout') }}" class="inline">
                             @csrf
