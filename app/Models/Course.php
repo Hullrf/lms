@@ -3,9 +3,11 @@
 namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\SoftDeletes;
 
 class Course extends Model
 {
+    use SoftDeletes;
     protected $fillable = [
         'instructor_id', 'category_id', 'title', 'slug',
         'description', 'thumbnail', 'intro_video',
@@ -17,6 +19,14 @@ class Course extends Model
         'price'        => 'decimal:2',
         'published_at' => 'datetime',
     ];
+
+    protected static function boot(): void
+    {
+        parent::boot();
+        static::deleting(function (Course $course) {
+            $course->modules->each->delete();
+        });
+    }
 
     // Relaciones
     public function instructor() {

@@ -26,17 +26,22 @@ Route::middleware('auth')->group(function () {
 });
 
 // ─── Admin ────────────────────────────────────────────────────
-Route::middleware(['auth', 'admin'])
-     ->prefix('admin')
-     ->name('admin.')
-     ->group(function () {
-          Route::get('/', [Admin\DashboardController::class, 'index'])->name('dashboard');
-          Route::resource('courses', Admin\CourseController::class);
-          Route::resource('courses.modules', Admin\ModuleController::class)->shallow();
-          Route::resource('modules.lessons', Admin\LessonController::class)->shallow();
-          Route::resource('users', Admin\UserController::class);
-          Route::resource('categories', Admin\CategoryController::class);
-     });
+Route::middleware(['auth'])->prefix('admin')->name('admin.')->group(function () {
+
+    // Solo administradores
+    Route::middleware('admin')->group(function () {
+        Route::get('/', [Admin\DashboardController::class, 'index'])->name('dashboard');
+        Route::resource('users', Admin\UserController::class);
+        Route::resource('categories', Admin\CategoryController::class);
+    });
+
+    // Administradores e instructores (la policy controla ownership)
+    Route::middleware('instructor.or.admin')->group(function () {
+        Route::resource('courses', Admin\CourseController::class);
+        Route::resource('courses.modules', Admin\ModuleController::class)->shallow();
+        Route::resource('modules.lessons', Admin\LessonController::class)->shallow();
+    });
+});
 
 Route::get('/profile', [\App\Http\Controllers\Student\ProfileController::class, 'edit'])->name('profile.edit');
 Route::patch('/profile', [\App\Http\Controllers\Student\ProfileController::class, 'update'])->name('profile.update');

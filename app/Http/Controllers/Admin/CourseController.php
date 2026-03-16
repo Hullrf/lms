@@ -12,12 +12,20 @@ class CourseController extends Controller
 {
     public function index()
     {
-        $courses = Course::with('instructor', 'category')->latest()->paginate(15);
+        $this->authorize('viewAny', Course::class);
+
+        $courses = auth()->user()->isAdmin()
+            ? Course::with('instructor', 'category')->latest()->paginate(15)
+            : Course::with('instructor', 'category')
+                    ->where('instructor_id', auth()->id())
+                    ->latest()->paginate(15);
+
         return view('admin.courses.index', compact('courses'));
     }
 
     public function create()
     {
+        $this->authorize('create', Course::class);
         $categories = Category::all();
         return view('admin.courses.create', compact('categories'));
     }
@@ -55,12 +63,14 @@ class CourseController extends Controller
 
     public function edit(Course $course)
     {
+        $this->authorize('update', $course);
         $categories = Category::all();
         return view('admin.courses.edit', compact('course', 'categories'));
     }
 
     public function update(Request $request, Course $course)
     {
+        $this->authorize('update', $course);
         $data = $request->validate([
             'title'       => 'required|string|max:200',
             'description' => 'nullable|string',
@@ -89,6 +99,7 @@ class CourseController extends Controller
 
     public function destroy(Course $course)
     {
+        $this->authorize('delete', $course);
         $course->delete();
         return redirect()->route('admin.courses.index')
                          ->with('success', 'Curso eliminado.');
@@ -96,6 +107,7 @@ class CourseController extends Controller
 
     public function show(Course $course)
     {
+        $this->authorize('view', $course);
         $course->load('modules.lessons');
         return view('admin.courses.show', compact('course'));
     }

@@ -11,6 +11,8 @@ class ModuleController extends Controller
 {
     public function store(Request $request, Course $course)
     {
+        $this->authorize('update', $course);
+
         $data = $request->validate([
             'title'       => 'required|string|max:200',
             'description' => 'nullable|string',
@@ -25,6 +27,8 @@ class ModuleController extends Controller
 
     public function update(Request $request, Module $module)
     {
+        $this->authorize('update', $module->course);
+
         $data = $request->validate([
             'title'       => 'required|string|max:200',
             'description' => 'nullable|string',
@@ -37,6 +41,8 @@ class ModuleController extends Controller
 
     public function destroy(Module $module)
     {
+        $this->authorize('update', $module->course);
+
         $courseId = $module->course_id;
         $module->delete();
         return redirect()->route('admin.courses.show', $courseId)
