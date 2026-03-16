@@ -41,4 +41,8 @@ class Lesson extends Model
                     ->where('completed', true)
                     ->exists();
     }
+
+    public function questions() {
+        return $this->hasMany(QuizQuestion::class)->orderBy('sort_order');
+    }
 }

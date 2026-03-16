@@ -23,6 +23,7 @@ Route::middleware('auth')->group(function () {
           ->name('lesson.show');
      Route::post('/progress/{lesson}', [ProgressController::class, 'update'])
           ->name('progress.update');
+     Route::post('/quiz/{lesson}', [\App\Http\Controllers\Student\QuizController::class, 'submit'])->name('quiz.submit');
 });
 
 // ─── Admin ────────────────────────────────────────────────────
@@ -40,6 +41,13 @@ Route::middleware(['auth'])->prefix('admin')->name('admin.')->group(function () 
         Route::resource('courses', Admin\CourseController::class);
         Route::resource('courses.modules', Admin\ModuleController::class)->shallow();
         Route::resource('modules.lessons', Admin\LessonController::class)->shallow();
+
+        // Quiz management
+        Route::get('lessons/{lesson}/quiz', [Admin\QuizController::class, 'edit'])->name('quiz.edit');
+        Route::post('lessons/{lesson}/quiz/questions', [Admin\QuizController::class, 'storeQuestion'])->name('quiz.questions.store');
+        Route::delete('quiz-questions/{question}', [Admin\QuizController::class, 'destroyQuestion'])->name('quiz.questions.destroy');
+        Route::post('quiz-questions/{question}/options', [Admin\QuizController::class, 'storeOption'])->name('quiz.options.store');
+        Route::delete('quiz-options/{option}', [Admin\QuizController::class, 'destroyOption'])->name('quiz.options.destroy');
     });
 });
 

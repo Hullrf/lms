@@ -49,10 +49,13 @@
                     @foreach($module->lessons as $lesson)
                         <li class="px-4 py-2 flex justify-between items-center text-sm">
                             <div class="flex items-center gap-2">
-                                <span>{{ $lesson->type === 'video' ? '▶️' : '📄' }}</span>
+                                <span>{{ $lesson->type === 'video' ? '▶️' : ($lesson->type === 'quiz' ? '📝' : '📄') }}</span>
                                 <span class="text-gray-700">{{ $lesson->title }}</span>
                                 @if($lesson->is_preview)
                                     <span class="text-xs text-green-600 font-medium">Preview</span>
+                                @endif
+                                @if($lesson->type === 'quiz')
+                                    <a href="{{ route('admin.quiz.edit', $lesson) }}" class="text-xs text-indigo-500 hover:underline ml-2">Editar quiz</a>
                                 @endif
                             </div>
                             <form method="POST" action="{{ route('admin.lessons.destroy', $lesson) }}"
@@ -74,6 +77,7 @@
                         <option value="video">Video</option>
                         <option value="text">Texto</option>
                         <option value="file">Archivo</option>
+                        <option value="quiz">Quiz</option>
                     </select>
                     <input type="url" name="video_url" placeholder="URL del video (opcional)"
                            class="flex-1 border border-gray-300 rounded-lg px-3 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-400">
