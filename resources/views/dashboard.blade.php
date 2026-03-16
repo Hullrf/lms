@@ -18,12 +18,13 @@
     <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
         @foreach($enrollments as $enrollment)
         @php $course = $enrollment->course; @endphp
-        <div class="bg-white rounded-xl border border-gray-200 shadow-sm overflow-hidden flex flex-col">
-            <div class="flex-shrink-0 h-36 bg-indigo-50 flex items-center justify-center overflow-hidden">
+        <div class="bg-white rounded-xl border border-gray-200 shadow-sm overflow-hidden">
+            <div style="height:160px; overflow:hidden; background:#eef2ff; display:flex; align-items:center; justify-content:center;">
                 @if($course->thumbnail)
-                <img src="{{ Storage::url($course->thumbnail) }}" class="w-full h-36 object-cover">
+                <img src="{{ Storage::url($course->thumbnail) }}"
+                     style="width:100%; height:160px; object-fit:cover; display:block;">
                 @else
-                <span class="text-4xl">📚</span>
+                <span style="font-size:2.5rem;">📚</span>
                 @endif
             </div>
             <div class="p-4">
