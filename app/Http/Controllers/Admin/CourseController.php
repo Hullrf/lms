@@ -11,20 +11,39 @@ use Illuminate\Support\Str;
 
 class CourseController extends Controller
 {
-    public function index()
+    public function index(\Illuminate\Http\Request $request)
     {
         $this->authorize('viewAny', Course::class);
 
-        // Todos los cursos son visibles; la policy controla quién puede editarlos
-        $courses = Course::with('instructor', 'category')->latest()->paginate(15);
+        $query = Course::with('instructor', 'category');
 
-        // IDs de cursos que el instructor puede editar (propios + colaboraciones)
+        if ($request->filled('search')) {
+            $query->where('title', 'like', '%' . $request->search . '%');
+        }
+
+        if ($request->filled('status')) {
+            $query->where('status', $request->status);
+        }
+
+        $courses = $query->orderBy('title')->get();
+
+        // Agrupar por categoría; sin categoría va al final
+        $grouped = $courses->groupBy(fn($c) => $c->category?->name ?? '__sin_categoria__')
+            ->sortKeys();
+
+        // Separar "Sin categoría" y ponerla al final
+        $sinCategoria = $grouped->pull('__sin_categoria__');
+        if ($sinCategoria) {
+            $grouped->put('Sin categoría', $sinCategoria);
+        }
+
+        // IDs editables para el instructor
         $editableCourseIds = auth()->user()->isAdmin()
-            ? null  // null = todos
+            ? null
             : Course::where('instructor_id', auth()->id())->pluck('id')
                 ->merge(auth()->user()->collaboratingCourses()->pluck('id'));
 
-        return view('admin.courses.index', compact('courses', 'editableCourseIds'));
+        return view('admin.courses.index', compact('grouped', 'editableCourseIds'));
     }
 
     public function create()
