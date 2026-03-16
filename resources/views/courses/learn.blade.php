@@ -7,9 +7,9 @@
 <div class="flex h-[calc(100vh-64px)] relative" x-data="{ sidebarOpen: true }">
 
     {{-- Sidebar del curso --}}
-    <aside class="bg-white border-r border-gray-200 flex-shrink-0 transition-all duration-300 flex flex-col"
-           :class="sidebarOpen ? 'w-80' : 'w-0'">
-        <div class="overflow-y-auto flex-1 min-w-[320px]">
+    <aside class="bg-white border-r border-gray-200 flex-shrink-0 overflow-hidden transition-all duration-300"
+           :class="sidebarOpen ? 'w-80' : 'w-0 border-r-0'">
+        <div class="w-80 h-full overflow-y-auto">
         <div class="p-4 border-b border-gray-200">
             <a href="{{ route('courses.show', $course->slug) }}"
                 class="text-sm text-indigo-600 hover:underline">← {{ $course->title }}</a>
