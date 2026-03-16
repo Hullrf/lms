@@ -32,7 +32,7 @@ Route::middleware(['auth'])->prefix('admin')->name('admin.')->group(function () 
     // Solo administradores
     Route::middleware('admin')->group(function () {
         Route::resource('users', Admin\UserController::class);
-        // Categorías: solo admins pueden crear/editar/eliminar
+        Route::get('categories', [Admin\CategoryController::class, 'index'])->name('categories.index');
         Route::post('categories', [Admin\CategoryController::class, 'store'])->name('categories.store');
         Route::patch('categories/{category}', [Admin\CategoryController::class, 'update'])->name('categories.update');
         Route::delete('categories/{category}', [Admin\CategoryController::class, 'destroy'])->name('categories.destroy');
@@ -41,8 +41,6 @@ Route::middleware(['auth'])->prefix('admin')->name('admin.')->group(function () 
     // Administradores e instructores
     Route::middleware('instructor.or.admin')->group(function () {
         Route::get('/', [Admin\DashboardController::class, 'index'])->name('dashboard');
-        // Categorías: todos pueden ver
-        Route::get('categories', [Admin\CategoryController::class, 'index'])->name('categories.index');
         Route::resource('courses', Admin\CourseController::class);
         Route::resource('courses.modules', Admin\ModuleController::class)->shallow();
         Route::resource('modules.lessons', Admin\LessonController::class)->shallow();

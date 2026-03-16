@@ -33,10 +33,12 @@
                 👥 Usuarios
             </a>
             @endif
+            @if(auth()->user()->isAdmin())
             <a href="{{ route('admin.categories.index') }}"
                 class="flex items-center gap-3 px-3 py-2 rounded-lg text-sm {{ request()->routeIs('admin.categories*') ? 'bg-indigo-600 text-white' : 'text-gray-300 hover:bg-gray-800' }}">
-                🏷️ Categorías @if(auth()->user()->isInstructor())<span class="text-xs text-gray-500">(solo lectura)</span>@endif
+                🏷️ Categorías
             </a>
+            @endif
         </nav>
         <div class="p-4 border-t border-gray-700">
             <p class="text-xs text-gray-400">{{ auth()->user()->name }}</p>
