@@ -52,6 +52,29 @@ class ProgressController extends Controller
             $enrollment->save();
         }
 
-        return response()->json(['progress' => $percent]);
+        // Encontrar la siguiente lección que acaba de desbloquearse
+        $allLessons = $course->modules()
+            ->orderBy('sort_order')
+            ->with(['lessons' => fn($q) => $q->orderBy('sort_order')])
+            ->get()
+            ->flatMap(fn($m) => $m->lessons);
+
+        $currentIndex = $allLessons->search(fn($l) => $l->id === $lesson->id);
+        $nextLesson   = $currentIndex !== false ? $allLessons->get($currentIndex + 1) : null;
+
+        $nextLessonData = null;
+        if ($nextLesson && !$nextLesson->isCompletedBy($user)) {
+            $nextLessonData = [
+                'id'    => $nextLesson->id,
+                'title' => $nextLesson->title,
+                'type'  => $nextLesson->type,
+                'url'   => route('lesson.show', [$course->slug, $nextLesson->slug]),
+            ];
+        }
+
+        return response()->json([
+            'progress'   => $percent,
+            'nextLesson' => $nextLessonData,
+        ]);
     }
 }

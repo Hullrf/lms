@@ -20,7 +20,11 @@ class ModuleController extends Controller
         ]);
 
         $data['sort_order'] = $data['sort_order'] ?? $course->modules()->count();
-        $course->modules()->create($data);
+        $module = $course->modules()->create($data);
+
+        if ($request->wantsJson()) {
+            return response()->json(['id' => $module->id, 'title' => $module->title]);
+        }
 
         return back()->with('success', 'Módulo creado.');
     }

@@ -26,7 +26,15 @@ class LessonController extends Controller
 
         $data['slug']       = Str::slug($data['title']);
         $data['sort_order'] = $data['sort_order'] ?? $module->lessons()->count();
-        $module->lessons()->create($data);
+        $lesson = $module->lessons()->create($data);
+
+        if ($request->wantsJson()) {
+            return response()->json([
+                'id'    => $lesson->id,
+                'title' => $lesson->title,
+                'type'  => $lesson->type,
+            ]);
+        }
 
         return back()->with('success', 'Lección creada.');
     }

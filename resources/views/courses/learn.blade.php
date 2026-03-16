@@ -45,7 +45,8 @@
             $isLocked = !$item->is_preview && $itemIndex > 0 && !$allLessons[$itemIndex - 1]->isCompletedBy(auth()->user()) && !$isCompleted;
             @endphp
             @if($isLocked)
-            <div class="flex items-center gap-2 px-4 py-2.5 text-sm border-l-4 border-transparent text-gray-400 cursor-not-allowed select-none">
+            <div data-locked-lesson="{{ $item->id }}"
+                 class="flex items-center gap-2 px-4 py-2.5 text-sm border-l-4 border-transparent text-gray-400 cursor-not-allowed select-none">
                 <span class="flex-shrink-0 text-xs">🔒</span>
                 <span class="line-clamp-2">{{ $item->title }}</span>
             </div>
@@ -233,32 +234,30 @@
 </div>
 
 <script>
-document.querySelectorAll('.lesson-check').forEach(checkbox => {
+const CSRF = document.querySelector('meta[name="csrf-token"]').content;
+const icons = { video: '▶️', quiz: '📝', text: '📄', file: '📄' };
+
+function attachCheckbox(checkbox) {
     checkbox.addEventListener('change', async function () {
         if (!this.checked) return;
-
         this.disabled = true;
         const lessonId = this.dataset.lesson;
 
         try {
             const res = await fetch(`/progress/${lessonId}`, {
                 method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                    'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content
-                },
+                headers: { 'Content-Type': 'application/json', 'X-CSRF-TOKEN': CSRF },
                 body: JSON.stringify({ completed: true })
             });
-
             const data = await res.json();
 
-            // Actualizar barra de progreso del sidebar
+            // Barra de progreso
             const bar = document.getElementById('progress-bar');
             const label = document.getElementById('progress-label');
             if (bar) bar.style.width = data.progress + '%';
             if (label) label.textContent = data.progress + '%';
 
-            // Si la lección actual fue marcada, actualizar el indicador de estado
+            // Indicador de estado de la lección actual
             if (lessonId == '{{ $lesson->id }}') {
                 const status = document.getElementById('lesson-status');
                 if (status) {
@@ -266,11 +265,32 @@ document.querySelectorAll('.lesson-check').forEach(checkbox => {
                     status.className = 'text-sm text-green-600 font-medium flex items-center gap-2';
                 }
             }
+
+            // Desbloquear la siguiente lección en el sidebar
+            if (data.nextLesson) {
+                const locked = document.querySelector(`[data-locked-lesson="${data.nextLesson.id}"]`);
+                if (locked) {
+                    const icon = icons[data.nextLesson.type] || '📄';
+                    const div = document.createElement('div');
+                    div.className = 'flex items-center gap-2 px-3 py-2.5 border-l-4 border-transparent hover:bg-gray-50 transition';
+                    div.innerHTML = `
+                        <span class="flex-shrink-0 text-xs">${icon}</span>
+                        <a href="${data.nextLesson.url}" class="flex-1 text-sm line-clamp-2 text-gray-700">${data.nextLesson.title}</a>
+                        <input type="checkbox" data-lesson="${data.nextLesson.id}"
+                               class="lesson-check flex-shrink-0 w-4 h-4 rounded cursor-pointer accent-indigo-600"
+                               title="Marcar como completada">
+                    `;
+                    locked.replaceWith(div);
+                    attachCheckbox(div.querySelector('.lesson-check'));
+                }
+            }
         } catch (e) {
             this.checked = false;
             this.disabled = false;
         }
     });
-});
+}
+
+document.querySelectorAll('.lesson-check').forEach(attachCheckbox);
 </script>
 @endsection

@@ -29,7 +29,8 @@
 
     {{-- Formulario nuevo módulo (solo editores) --}}
     @if($canEdit)
-    <form method="POST" action="{{ route('admin.courses.modules.store', $course) }}"
+    <form id="form-new-module"
+          data-url="{{ route('admin.courses.modules.store', $course) }}"
           class="flex gap-3 mb-6 p-4 bg-gray-50 rounded-lg">
         @csrf
         <input type="text" name="title" placeholder="Nombre del módulo" required
@@ -41,9 +42,9 @@
     @endif
 
     {{-- Lista de módulos --}}
-    <div class="space-y-4">
+    <div class="space-y-4" id="modules-list">
         @forelse($course->modules as $module)
-            <div class="border border-gray-200 rounded-lg overflow-hidden">
+            <div class="border border-gray-200 rounded-lg overflow-hidden" data-module-block="{{ $module->id }}">
                 <div class="bg-gray-50 px-4 py-3 flex justify-between items-center">
                     <span class="font-medium text-gray-800">{{ $module->title }}</span>
                     @if($canEdit)
@@ -56,7 +57,7 @@
                 </div>
 
                 {{-- Lecciones --}}
-                <ul class="divide-y divide-gray-100">
+                <ul class="divide-y divide-gray-100" id="lessons-{{ $module->id }}">
                     @foreach($module->lessons as $lesson)
                         <li class="text-sm border-b border-gray-50 last:border-0">
                             <div class="px-4 py-2 flex justify-between items-center">
@@ -127,8 +128,9 @@
 
                 {{-- Formulario nueva lección (solo editores) --}}
                 @if($canEdit)
-                <form method="POST" action="{{ route('admin.modules.lessons.store', $module) }}"
-                      class="p-3 bg-gray-50 border-t border-gray-100 flex gap-2">
+                <form class="lesson-create-form p-3 bg-gray-50 border-t border-gray-100 flex gap-2"
+                      data-url="{{ route('admin.modules.lessons.store', $module) }}"
+                      data-module="{{ $module->id }}">
                     @csrf
                     <input type="text" name="title" placeholder="Nueva lección..." required
                            class="flex-1 border border-gray-300 rounded-lg px-3 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-400">
@@ -306,6 +308,137 @@
 @endsection
 
 @push('scripts')
+<script>
+const CSRF = document.querySelector('meta[name="csrf-token"]').content;
+const lessonIcons = { video: '▶️', quiz: '📝', text: '📄', file: '📄' };
+
+// ── Crear módulo sin recarga ───────────────────────────────────
+const formModule = document.getElementById('form-new-module');
+if (formModule) {
+    formModule.addEventListener('submit', async function (e) {
+        e.preventDefault();
+        const titleInput = this.querySelector('[name="title"]');
+        const title = titleInput.value.trim();
+        if (!title) return;
+
+        const btn = this.querySelector('button[type="submit"]');
+        btn.disabled = true;
+
+        const res = await fetch(this.dataset.url, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json', 'X-CSRF-TOKEN': CSRF, 'Accept': 'application/json' },
+            body: JSON.stringify({ title })
+        });
+
+        if (res.ok) {
+            const mod = await res.json();
+            appendModule(mod);
+            titleInput.value = '';
+
+            // Quitar mensaje "sin módulos" si existía
+            const empty = document.querySelector('#modules-list p');
+            if (empty) empty.remove();
+        }
+
+        btn.disabled = false;
+    });
+}
+
+function appendModule(mod) {
+    const list = document.getElementById('modules-list');
+    const div = document.createElement('div');
+    div.className = 'border border-gray-200 rounded-lg overflow-hidden';
+    div.dataset.moduleBlock = mod.id;
+    div.innerHTML = `
+        <div class="bg-gray-50 px-4 py-3 flex justify-between items-center">
+            <span class="font-medium text-gray-800">${mod.title}</span>
+            <form method="POST" action="/admin/modules/${mod.id}" onsubmit="return confirm('¿Eliminar módulo y todas sus lecciones?')">
+                <input type="hidden" name="_token" value="${CSRF}">
+                <input type="hidden" name="_method" value="DELETE">
+                <button class="text-xs text-red-500 hover:underline">Eliminar</button>
+            </form>
+        </div>
+        <ul class="divide-y divide-gray-100" id="lessons-${mod.id}"></ul>
+        <form class="lesson-create-form p-3 bg-gray-50 border-t border-gray-100 flex gap-2"
+              data-url="/admin/modules/${mod.id}/lessons" data-module="${mod.id}">
+            <input type="hidden" name="_token" value="${CSRF}">
+            <input type="text" name="title" placeholder="Nueva lección..." required
+                   class="flex-1 border border-gray-300 rounded-lg px-3 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-400">
+            <select name="type" class="border border-gray-300 rounded-lg px-3 py-1.5 text-sm">
+                <option value="video">Video</option>
+                <option value="text">Texto</option>
+                <option value="file">Archivo</option>
+                <option value="quiz">Quiz</option>
+            </select>
+            <input type="url" name="video_url" placeholder="URL del video (opcional)"
+                   class="flex-1 border border-gray-300 rounded-lg px-3 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-400">
+            <button type="submit" class="bg-indigo-600 text-white px-4 py-1.5 rounded-lg text-sm hover:bg-indigo-700">
+                Añadir
+            </button>
+        </form>
+    `;
+    list.appendChild(div);
+    attachLessonForm(div.querySelector('.lesson-create-form'));
+}
+
+// ── Crear lección sin recarga ─────────────────────────────────
+function attachLessonForm(form) {
+    form.addEventListener('submit', async function (e) {
+        e.preventDefault();
+        const titleInput = this.querySelector('[name="title"]');
+        const typeSelect = this.querySelector('[name="type"]');
+        const videoInput = this.querySelector('[name="video_url"]');
+        const moduleId   = this.dataset.module;
+
+        const btn = this.querySelector('button[type="submit"]');
+        btn.disabled = true;
+
+        const body = { title: titleInput.value.trim(), type: typeSelect.value };
+        if (videoInput && videoInput.value) body.video_url = videoInput.value;
+
+        const res = await fetch(this.dataset.url, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json', 'X-CSRF-TOKEN': CSRF, 'Accept': 'application/json' },
+            body: JSON.stringify(body)
+        });
+
+        if (res.ok) {
+            const lesson = await res.json();
+            appendLesson(lesson, moduleId);
+            titleInput.value = '';
+            if (videoInput) videoInput.value = '';
+        }
+
+        btn.disabled = false;
+    });
+}
+
+function appendLesson(lesson, moduleId) {
+    const ul = document.getElementById(`lessons-${moduleId}`);
+    if (!ul) return;
+    const icon = lessonIcons[lesson.type] || '📄';
+    const li = document.createElement('li');
+    li.className = 'text-sm border-b border-gray-50 last:border-0';
+    li.innerHTML = `
+        <div class="px-4 py-2 flex justify-between items-center">
+            <div class="flex items-center gap-2">
+                <span>${icon}</span>
+                <span class="text-gray-700">${lesson.title}</span>
+                ${lesson.type === 'quiz' ? `<a href="/admin/lessons/${lesson.id}/quiz" class="text-xs text-indigo-500 hover:underline ml-2">Editar quiz</a>` : ''}
+            </div>
+            <form method="POST" action="/admin/lessons/${lesson.id}" onsubmit="return confirm('¿Eliminar lección?')">
+                <input type="hidden" name="_token" value="${CSRF}">
+                <input type="hidden" name="_method" value="DELETE">
+                <button class="text-xs text-red-500 hover:underline">Eliminar</button>
+            </form>
+        </div>
+    `;
+    ul.appendChild(li);
+}
+
+// Adjuntar listener a formularios de lección existentes
+document.querySelectorAll('.lesson-create-form').forEach(attachLessonForm);
+</script>
 <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.3/dist/chart.umd.min.js"></script>
 <script>
 new Chart(document.getElementById('chartCourseEnrollments'), {
