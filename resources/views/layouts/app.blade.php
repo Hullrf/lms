@@ -79,6 +79,7 @@
 
         {{-- Enlaces --}}
         <nav class="flex-1 px-6 py-6 space-y-1 overflow-y-auto">
+            @auth
             {{-- Info del usuario --}}
             <div class="mb-4 pb-4 border-b border-gray-100">
                 <p class="text-sm font-semibold text-gray-800">{{ auth()->user()->name }}</p>
@@ -101,6 +102,7 @@
                 ⚙️ {{ auth()->user()->isAdmin() ? 'Panel de administración' : 'Mi panel de instructor' }}
             </a>
             @endif
+            @endauth
         </nav>
     </div>
 
