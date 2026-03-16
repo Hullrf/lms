@@ -12,7 +12,9 @@ class UserController extends Controller
      */
     public function index()
     {
-        $users = \App\Models\User::latest()->paginate(20);
+        $users = \App\Models\User::withCount('enrollments')
+            ->with(['enrollments.course'])
+            ->latest()->paginate(20);
         return view('admin.users.index', compact('users'));
     }
 

@@ -18,21 +18,25 @@
                 <th class="px-6 py-3 text-left">Acciones</th>
             </tr>
         </thead>
-        <tbody class="divide-y divide-gray-100">
+        <tbody>
             @foreach($users as $user)
-                <tr class="hover:bg-gray-50">
-                    <td class="px-6 py-4 font-medium text-gray-900">{{ $user->name }}</td>
+            @php
+                $colors = ['admin'=>'bg-red-100 text-red-700','instructor'=>'bg-blue-100 text-blue-700','student'=>'bg-green-100 text-green-700'];
+            @endphp
+            <tbody x-data="{ open: false }" class="border-b border-gray-100">
+                <tr class="hover:bg-gray-50 cursor-pointer" @click="open = !open">
+                    <td class="px-6 py-4 font-medium text-gray-900 flex items-center gap-2">
+                        <span x-text="open ? '▾' : '▸'" class="text-gray-400 text-xs"></span>
+                        {{ $user->name }}
+                    </td>
                     <td class="px-6 py-4 text-gray-600">{{ $user->email }}</td>
                     <td class="px-6 py-4">
-                        @php
-                            $colors = ['admin'=>'bg-red-100 text-red-700','instructor'=>'bg-blue-100 text-blue-700','student'=>'bg-green-100 text-green-700'];
-                        @endphp
                         <span class="px-2 py-1 rounded-full text-xs font-medium {{ $colors[$user->role] }}">
                             {{ ucfirst($user->role) }}
                         </span>
                     </td>
                     <td class="px-6 py-4 text-gray-500">{{ $user->created_at->format('d/m/Y') }}</td>
-                    <td class="px-6 py-4">
+                    <td class="px-6 py-4" @click.stop>
                         @if($user->id !== auth()->id())
                             <div class="flex items-center gap-3">
                                 <form method="POST" action="{{ route('admin.users.update', $user) }}" class="flex items-center gap-1">
@@ -55,6 +59,43 @@
                         @endif
                     </td>
                 </tr>
+
+                {{-- Fila expandible: cursos inscritos --}}
+                <tr x-show="open" x-transition style="display:none">
+                    <td colspan="5" class="px-10 py-3 bg-indigo-50">
+                        @if($user->role === 'student' && $user->enrollments->isNotEmpty())
+                            <p class="text-xs font-semibold text-indigo-700 mb-2">
+                                Cursos inscritos ({{ $user->enrollments_count }})
+                            </p>
+                            <div class="space-y-2">
+                                @foreach($user->enrollments as $enrollment)
+                                <div class="flex items-center gap-4">
+                                    <span class="text-sm text-gray-700 w-56 truncate">{{ $enrollment->course->title }}</span>
+                                    <div class="flex items-center gap-2 flex-1">
+                                        <div class="w-32 bg-gray-200 rounded-full h-1.5">
+                                            <div class="h-1.5 rounded-full {{ $enrollment->progress === 100 ? 'bg-green-500' : 'bg-indigo-500' }}"
+                                                 style="width: {{ $enrollment->progress }}%"></div>
+                                        </div>
+                                        <span class="text-xs text-gray-500">{{ $enrollment->progress }}%</span>
+                                    </div>
+                                    @if($enrollment->progress === 100)
+                                        <span class="text-xs bg-green-100 text-green-700 px-2 py-0.5 rounded-full">Completado</span>
+                                    @elseif($enrollment->progress > 0)
+                                        <span class="text-xs bg-blue-100 text-blue-700 px-2 py-0.5 rounded-full">En progreso</span>
+                                    @else
+                                        <span class="text-xs bg-gray-100 text-gray-500 px-2 py-0.5 rounded-full">Sin iniciar</span>
+                                    @endif
+                                </div>
+                                @endforeach
+                            </div>
+                        @elseif($user->role === 'student')
+                            <p class="text-xs text-gray-400 italic">Este estudiante no está inscrito en ningún curso.</p>
+                        @else
+                            <p class="text-xs text-gray-400 italic">Los usuarios con rol {{ $user->role }} no tienen inscripciones.</p>
+                        @endif
+                    </td>
+                </tr>
+            </tbody>
             @endforeach
         </tbody>
     </table>
