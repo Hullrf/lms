@@ -82,9 +82,9 @@
                         @if(!is_null($progress) && $progress < 100)
                             <div class="mt-2">
                                 <div class="w-full bg-gray-200 rounded-full h-1.5">
-                                    <div class="bg-indigo-500 h-1.5 rounded-full" style="width: {{ $progress }}%"></div>
+                                    <div class="h-1.5 rounded-full" style="width: {{ (int) $progress }}%; background-color: #6366f1;"></div>
                                 </div>
-                                <span class="text-xs text-gray-400 mt-0.5 block">{{ $progress }}% completado</span>
+                                <span class="text-xs text-gray-400 mt-0.5 block">{{ (int) $progress }}% completado</span>
                             </div>
                         @endif
 
