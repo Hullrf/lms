@@ -46,8 +46,21 @@
     @else
         <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
             @foreach($courses as $course)
+            @php $progress = $enrolledCourses->get($course->id); @endphp
                 <a href="{{ route('courses.show', $course->slug) }}"
-                   class="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden hover:shadow-md transition-shadow">
+                   class="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden hover:shadow-md transition-shadow relative">
+
+                    {{-- Badge inscrito --}}
+                    @if(!is_null($progress))
+                        <div class="absolute top-2 right-2 z-10">
+                            @if($progress == 100)
+                                <span class="bg-green-500 text-white text-xs font-semibold px-2 py-0.5 rounded-full">✓ Completado</span>
+                            @else
+                                <span class="bg-indigo-600 text-white text-xs font-semibold px-2 py-0.5 rounded-full">Inscrito</span>
+                            @endif
+                        </div>
+                    @endif
+
                     {{-- Thumbnail --}}
                     <div class="h-40 bg-indigo-100 flex items-center justify-center overflow-hidden">
                         @if($course->thumbnail)
@@ -64,6 +77,16 @@
                         </span>
                         <h3 class="font-semibold text-gray-900 mt-1 line-clamp-2">{{ $course->title }}</h3>
                         <p class="text-xs text-gray-500 mt-1">{{ $course->instructor->name }}</p>
+
+                        {{-- Barra de progreso si está inscrito --}}
+                        @if(!is_null($progress) && $progress < 100)
+                            <div class="mt-2">
+                                <div class="w-full bg-gray-200 rounded-full h-1.5">
+                                    <div class="bg-indigo-500 h-1.5 rounded-full" style="width: {{ $progress }}%"></div>
+                                </div>
+                                <span class="text-xs text-gray-400 mt-0.5 block">{{ $progress }}% completado</span>
+                            </div>
+                        @endif
 
                         <div class="flex items-center justify-between mt-3">
                             <span class="text-xs bg-gray-100 text-gray-600 px-2 py-1 rounded-full">

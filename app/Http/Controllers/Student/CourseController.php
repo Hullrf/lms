@@ -30,7 +30,11 @@ class CourseController extends Controller
         $courses    = $query->paginate(12);
         $categories = Category::all();
 
-        return view('courses.index', compact('courses', 'categories'));
+        $enrolledCourses = auth()->check()
+            ? auth()->user()->enrollments()->pluck('progress', 'course_id')
+            : collect();
+
+        return view('courses.index', compact('courses', 'categories', 'enrolledCourses'));
     }
 
     public function show(string $slug)
