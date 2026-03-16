@@ -53,12 +53,19 @@ class UserController extends Controller
         //
     }
 
-    /**
-     * Update the specified resource in storage.
-     */
-    public function update(Request $request, string $id)
+    public function update(Request $request, \App\Models\User $user)
     {
-        //
+        if ($user->id === auth()->id()) {
+            return back()->with('error', 'No puedes cambiar tu propio rol.');
+        }
+
+        $request->validate([
+            'role' => 'required|in:admin,instructor,student',
+        ]);
+
+        $user->update(['role' => $request->role]);
+
+        return back()->with('success', "Rol de {$user->name} actualizado a {$request->role}.");
     }
 
     /**

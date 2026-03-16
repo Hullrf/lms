@@ -34,11 +34,24 @@
                     <td class="px-6 py-4 text-gray-500">{{ $user->created_at->format('d/m/Y') }}</td>
                     <td class="px-6 py-4">
                         @if($user->id !== auth()->id())
-                            <form method="POST" action="{{ route('admin.users.destroy', $user) }}"
-                                  onsubmit="return confirm('¿Eliminar usuario?')">
-                                @csrf @method('DELETE')
-                                <button class="text-xs text-red-500 hover:underline">Eliminar</button>
-                            </form>
+                            <div class="flex items-center gap-3">
+                                <form method="POST" action="{{ route('admin.users.update', $user) }}" class="flex items-center gap-1">
+                                    @csrf @method('PATCH')
+                                    <select name="role" class="text-xs border border-gray-300 rounded px-2 py-1 focus:outline-none focus:ring-1 focus:ring-blue-400">
+                                        <option value="student"    @selected($user->role === 'student')>Estudiante</option>
+                                        <option value="instructor" @selected($user->role === 'instructor')>Instructor</option>
+                                        <option value="admin"      @selected($user->role === 'admin')>Admin</option>
+                                    </select>
+                                    <button type="submit" class="text-xs text-blue-600 hover:underline">Guardar</button>
+                                </form>
+                                <form method="POST" action="{{ route('admin.users.destroy', $user) }}"
+                                      onsubmit="return confirm('¿Eliminar usuario?')">
+                                    @csrf @method('DELETE')
+                                    <button class="text-xs text-red-500 hover:underline">Eliminar</button>
+                                </form>
+                            </div>
+                        @else
+                            <span class="text-xs text-gray-400 italic">Tu cuenta</span>
                         @endif
                     </td>
                 </tr>
