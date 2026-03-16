@@ -17,9 +17,22 @@
                 <a href="{{ route('home') }}" class="text-xl font-bold text-indigo-600">
                     {{ config('app.name') }}
                 </a>
-                <div class="flex items-center gap-4">
+                <div class="flex items-center gap-3">
                     <a href="{{ route('courses.index') }}" class="text-sm text-gray-600 hover:text-indigo-600">Cursos</a>
-                    {{-- Botón hamburguesa --}}
+
+                    {{-- Login / Logout en el navbar --}}
+                    @auth
+                        <form method="POST" action="{{ route('logout') }}" class="inline">
+                            @csrf
+                            <button class="text-sm text-gray-500 hover:text-red-500 transition">Cerrar sesión</button>
+                        </form>
+                    @else
+                        <a href="{{ route('login') }}" class="text-sm text-gray-600 hover:text-indigo-600">Iniciar sesión</a>
+                        <a href="{{ route('register') }}" class="text-sm bg-indigo-600 text-white px-4 py-1.5 rounded-lg hover:bg-indigo-700 transition">Registrarse</a>
+                    @endauth
+
+                    {{-- Botón hamburguesa (solo autenticados) --}}
+                    @auth
                     <button @click="open = true"
                             class="w-9 h-9 flex items-center justify-center rounded-lg hover:bg-gray-100 transition"
                             aria-label="Menú">
@@ -27,6 +40,7 @@
                             <path stroke-linecap="round" stroke-linejoin="round" d="M4 6h16M4 12h16M4 18h16"/>
                         </svg>
                     </button>
+                    @endauth
                 </div>
             </div>
         </div>
@@ -65,48 +79,28 @@
 
         {{-- Enlaces --}}
         <nav class="flex-1 px-6 py-6 space-y-1 overflow-y-auto">
-            @auth
-                {{-- Info del usuario --}}
-                <div class="mb-4 pb-4 border-b border-gray-100">
-                    <p class="text-sm font-semibold text-gray-800">{{ auth()->user()->name }}</p>
-                    <p class="text-xs text-gray-400">{{ auth()->user()->email }}</p>
-                </div>
+            {{-- Info del usuario --}}
+            <div class="mb-4 pb-4 border-b border-gray-100">
+                <p class="text-sm font-semibold text-gray-800">{{ auth()->user()->name }}</p>
+                <p class="text-xs text-gray-400">{{ auth()->user()->email }}</p>
+            </div>
 
-                <a href="{{ route('dashboard') }}"
-                   class="flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm text-gray-700 hover:bg-indigo-50 hover:text-indigo-600 transition">
-                    📚 Mi aprendizaje
-                </a>
+            <a href="{{ route('dashboard') }}"
+               class="flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm text-gray-700 hover:bg-indigo-50 hover:text-indigo-600 transition">
+                📚 Mi aprendizaje
+            </a>
 
-                <a href="{{ route('profile.edit') }}"
-                   class="flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm text-gray-700 hover:bg-indigo-50 hover:text-indigo-600 transition">
-                    👤 Mi perfil
-                </a>
+            <a href="{{ route('profile.edit') }}"
+               class="flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm text-gray-700 hover:bg-indigo-50 hover:text-indigo-600 transition">
+                👤 Mi perfil
+            </a>
 
-                @if(auth()->user()->isAdmin() || auth()->user()->isInstructor())
-                <a href="{{ route('admin.dashboard') }}"
-                   class="flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm text-indigo-600 font-medium hover:bg-indigo-50 transition">
-                    ⚙️ {{ auth()->user()->isAdmin() ? 'Panel de administración' : 'Mi panel de instructor' }}
-                </a>
-                @endif
-
-                <div class="pt-4 mt-4 border-t border-gray-100">
-                    <form method="POST" action="{{ route('logout') }}">
-                        @csrf
-                        <button class="w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm text-red-500 hover:bg-red-50 transition text-left">
-                            🚪 Cerrar sesión
-                        </button>
-                    </form>
-                </div>
-            @else
-                <a href="{{ route('login') }}"
-                   class="flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm text-gray-700 hover:bg-indigo-50 hover:text-indigo-600 transition">
-                    🔑 Iniciar sesión
-                </a>
-                <a href="{{ route('register') }}"
-                   class="flex items-center justify-center gap-2 mt-2 px-4 py-2.5 rounded-lg text-sm bg-indigo-600 text-white hover:bg-indigo-700 transition font-medium">
-                    Registrarse
-                </a>
-            @endauth
+            @if(auth()->user()->isAdmin() || auth()->user()->isInstructor())
+            <a href="{{ route('admin.dashboard') }}"
+               class="flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm text-indigo-600 font-medium hover:bg-indigo-50 transition">
+                ⚙️ {{ auth()->user()->isAdmin() ? 'Panel de administración' : 'Mi panel de instructor' }}
+            </a>
+            @endif
         </nav>
     </div>
 
