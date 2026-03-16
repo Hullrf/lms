@@ -55,7 +55,7 @@
                 <tr>
                     <th class="px-6 py-2 text-left">Curso</th>
                     <th class="px-6 py-2 text-left">Instructor</th>
-                    <th class="px-6 py-2 text-left">Precio</th>
+                    @if(auth()->user()->isAdmin())<th class="px-6 py-2 text-left">Precio</th>@endif
                     <th class="px-6 py-2 text-left">Estado</th>
                     <th class="px-6 py-2 text-left">Acciones</th>
                 </tr>
@@ -71,9 +71,11 @@
                 <tr class="hover:bg-gray-50">
                     <td class="px-6 py-3 font-medium text-gray-900">{{ $course->title }}</td>
                     <td class="px-6 py-3 text-gray-500 text-xs">{{ $course->instructor->name }}</td>
+                    @if(auth()->user()->isAdmin())
                     <td class="px-6 py-3 font-medium text-gray-700">
                         {{ $course->isFree() ? 'Gratis' : '$'.number_format($course->price, 2) }}
                     </td>
+                    @endif
                     <td class="px-6 py-3">
                         <span class="px-2 py-0.5 rounded-full text-xs font-medium {{ $colors[$course->status] }}">
                             {{ $labels[$course->status] }}
