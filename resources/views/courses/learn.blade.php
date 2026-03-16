@@ -4,12 +4,13 @@
 
 @section('content')
 
-<div class="flex h-[calc(100vh-64px)]" x-data="{ sidebarOpen: true }">
+<div class="flex h-[calc(100vh-64px)] relative" x-data="{ sidebarOpen: true }">
 
     {{-- Sidebar del curso --}}
-    <aside class="bg-white border-r border-gray-200 overflow-y-auto flex-shrink-0 transition-all duration-300"
-           :class="sidebarOpen ? 'w-80' : 'w-0 overflow-hidden border-r-0'">
-        <div class="p-4 border-b border-gray-200 w-80">
+    <aside class="bg-white border-r border-gray-200 flex-shrink-0 transition-all duration-300 flex flex-col"
+           :class="sidebarOpen ? 'w-80' : 'w-0'">
+        <div class="overflow-y-auto flex-1 min-w-[320px]">
+        <div class="p-4 border-b border-gray-200">
             <a href="{{ route('courses.show', $course->slug) }}"
                 class="text-sm text-indigo-600 hover:underline">← {{ $course->title }}</a>
 
@@ -69,23 +70,23 @@
             @endforeach
         </div>
         @endforeach
+        </div>{{-- fin overflow-y-auto --}}
     </aside>
+
+    {{-- Botón toggle pegado al borde entre sidebar y contenido --}}
+    <button @click="sidebarOpen = !sidebarOpen"
+            class="absolute top-4 z-20 flex items-center justify-center w-6 h-10 bg-white border border-gray-300 rounded-r-lg shadow-sm hover:bg-indigo-50 hover:border-indigo-300 transition-all duration-300"
+            :style="sidebarOpen ? 'left: 320px' : 'left: 0px'"
+            :title="sidebarOpen ? 'Ocultar panel' : 'Mostrar panel'">
+        <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4 text-gray-500 transition-transform duration-300"
+             :class="sidebarOpen ? '' : 'rotate-180'"
+             fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5">
+            <path stroke-linecap="round" stroke-linejoin="round" d="M15 19l-7-7 7-7"/>
+        </svg>
+    </button>
 
     {{-- Área de contenido --}}
     <main class="flex-1 overflow-y-auto bg-gray-50">
-
-        {{-- Barra superior con toggle --}}
-        <div class="sticky top-0 z-10 bg-white border-b border-gray-200 px-4 py-2 flex items-center gap-3">
-            <button @click="sidebarOpen = !sidebarOpen"
-                    class="w-8 h-8 flex items-center justify-center rounded-lg hover:bg-gray-100 transition"
-                    :title="sidebarOpen ? 'Ocultar panel' : 'Mostrar panel'">
-                <svg xmlns="http://www.w3.org/2000/svg" class="w-5 h-5 text-gray-500" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
-                    <path stroke-linecap="round" stroke-linejoin="round" d="M4 6h16M4 12h16M4 18h16"/>
-                </svg>
-            </button>
-            <span class="text-sm text-gray-500 truncate">{{ $lesson->title }}</span>
-        </div>
-
         <div class="max-w-3xl mx-auto px-6 py-8">
 
             @if(session('error'))
