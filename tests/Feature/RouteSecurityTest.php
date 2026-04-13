@@ -130,7 +130,7 @@ class RouteSecurityTest extends TestCase
 
         $this->actingAs($student)
             ->postJson(route('progress.update', $lesson))
-            ->assertRedirect();
+            ->assertRedirect(route('courses.show', $course->slug));
     }
 
     public function test_enrolled_user_can_post_progress(): void
@@ -198,7 +198,56 @@ class RouteSecurityTest extends TestCase
 
         $this->actingAs($student)
             ->postJson(route('quiz.submit', $lesson))
-            ->assertRedirect();
+            ->assertRedirect(route('courses.show', $course->slug));
+    }
+
+    public function test_unenrolled_user_cannot_view_lesson(): void
+    {
+        $instructor = User::factory()->create(['role' => 'instructor']);
+        $student    = User::factory()->create();
+        $course = Course::create([
+            'instructor_id' => $instructor->id,
+            'title'         => 'Curso pagado',
+            'slug'          => 'curso-lesson',
+            'status'        => 'published',
+            'is_free'       => false,
+            'price'         => 30,
+            'level'         => 'beginner',
+        ]);
+        $module = Module::create([
+            'course_id'  => $course->id,
+            'title'      => 'Módulo 1',
+            'sort_order' => 1,
+        ]);
+        $lesson = Lesson::create([
+            'module_id'  => $module->id,
+            'title'      => 'Lección bloqueada',
+            'slug'       => 'leccion-bloqueada',
+            'type'       => 'video',
+            'sort_order' => 1,
+        ]);
+
+        $this->actingAs($student)
+            ->get(route('lesson.show', [$course->slug, $lesson->slug]))
+            ->assertRedirect(route('courses.show', $course->slug));
+    }
+
+    public function test_unverified_user_cannot_download_certificate(): void
+    {
+        $instructor = User::factory()->create(['role' => 'instructor']);
+        $unverified = User::factory()->unverified()->create();
+        $course = Course::create([
+            'instructor_id' => $instructor->id,
+            'title'         => 'Curso',
+            'slug'          => 'curso-cert-dl',
+            'status'        => 'published',
+            'is_free'       => true,
+            'level'         => 'beginner',
+        ]);
+
+        $this->actingAs($unverified)
+            ->get(route('certificates.download', $course))
+            ->assertRedirect(route('verification.notice'));
     }
 
     // ── Public routes still accessible ────────────────────────────────────
