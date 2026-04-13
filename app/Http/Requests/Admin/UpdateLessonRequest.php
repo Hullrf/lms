@@ -8,7 +8,7 @@ class UpdateLessonRequest extends FormRequest
 {
     public function authorize(): bool
     {
-        return $this->user()->can('update', $this->route('lesson')->module->course);
+        return (bool) $this->user()?->can('update', $this->route('lesson')->module->course);
     }
 
     public function rules(): array
@@ -19,8 +19,8 @@ class UpdateLessonRequest extends FormRequest
             'video_url'      => 'required_if:type,video|nullable|url|max:500',
             'video_duration' => 'nullable|integer|min:0',
             'type'           => 'required|in:video,text,quiz,file',
-            'is_preview'     => 'boolean',
-            'sort_order'     => 'integer|min:0',
+            'is_preview'     => 'nullable|boolean',
+            'sort_order'     => 'nullable|integer|min:0',
             'passing_score'  => 'nullable|integer|min:0|max:100',
         ];
     }

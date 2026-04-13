@@ -176,4 +176,52 @@ class LessonRequestTest extends TestCase
             ->putJson(route('admin.lessons.update', $lesson), $data)
             ->assertForbidden();
     }
+
+    public function test_update_requires_title(): void
+    {
+        $lesson = Lesson::create([
+            'module_id'  => $this->module->id,
+            'title'      => 'Lección',
+            'slug'       => 'leccion-update-title',
+            'type'       => 'text',
+            'sort_order' => 1,
+        ]);
+
+        $this->actingAs($this->instructor)
+            ->putJson(route('admin.lessons.update', $lesson), ['type' => 'text'])
+            ->assertUnprocessable()
+            ->assertJsonValidationErrors('title');
+    }
+
+    public function test_update_rejects_invalid_type(): void
+    {
+        $lesson = Lesson::create([
+            'module_id'  => $this->module->id,
+            'title'      => 'Lección',
+            'slug'       => 'leccion-update-type',
+            'type'       => 'text',
+            'sort_order' => 2,
+        ]);
+
+        $this->actingAs($this->instructor)
+            ->putJson(route('admin.lessons.update', $lesson), ['title' => 'Lección', 'type' => 'audio'])
+            ->assertUnprocessable()
+            ->assertJsonValidationErrors('type');
+    }
+
+    public function test_update_rejects_passing_score_above_100(): void
+    {
+        $lesson = Lesson::create([
+            'module_id'  => $this->module->id,
+            'title'      => 'Lección',
+            'slug'       => 'leccion-update-score',
+            'type'       => 'text',
+            'sort_order' => 3,
+        ]);
+
+        $this->actingAs($this->instructor)
+            ->putJson(route('admin.lessons.update', $lesson), ['title' => 'Lección', 'type' => 'text', 'passing_score' => 101])
+            ->assertUnprocessable()
+            ->assertJsonValidationErrors('passing_score');
+    }
 }
