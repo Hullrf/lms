@@ -3,21 +3,16 @@
 namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
+use App\Http\Requests\Admin\StoreModuleRequest;
+use App\Http\Requests\Admin\UpdateModuleRequest;
 use App\Models\Course;
 use App\Models\Module;
-use Illuminate\Http\Request;
 
 class ModuleController extends Controller
 {
-    public function store(Request $request, Course $course)
+    public function store(StoreModuleRequest $request, Course $course)
     {
-        $this->authorize('update', $course);
-
-        $data = $request->validate([
-            'title'       => 'required|string|max:200',
-            'description' => 'nullable|string',
-            'sort_order'  => 'integer|min:0',
-        ]);
+        $data = $request->validated();
 
         $data['sort_order'] = $data['sort_order'] ?? $course->modules()->count();
         $module = $course->modules()->create($data);
@@ -29,17 +24,9 @@ class ModuleController extends Controller
         return back()->with('success', 'Módulo creado.');
     }
 
-    public function update(Request $request, Module $module)
+    public function update(UpdateModuleRequest $request, Module $module)
     {
-        $this->authorize('update', $module->course);
-
-        $data = $request->validate([
-            'title'       => 'required|string|max:200',
-            'description' => 'nullable|string',
-            'sort_order'  => 'integer|min:0',
-        ]);
-
-        $module->update($data);
+        $module->update($request->validated());
         return back()->with('success', 'Módulo actualizado.');
     }
 
