@@ -15,7 +15,8 @@ class Lesson extends Model
     ];
 
     protected $casts = [
-        'is_preview' => 'boolean',
+        'is_preview'    => 'boolean',
+        'passing_score' => 'int',
     ];
 
     public function module() {
