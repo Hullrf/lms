@@ -11,7 +11,7 @@ class Lesson extends Model
     protected $fillable = [
         'module_id', 'title', 'slug', 'content',
         'video_url', 'video_duration', 'type',
-        'is_preview', 'sort_order',
+        'is_preview', 'sort_order', 'passing_score',
     ];
 
     protected $casts = [
@@ -44,5 +44,10 @@ class Lesson extends Model
 
     public function questions() {
         return $this->hasMany(QuizQuestion::class)->orderBy('sort_order');
+    }
+
+    public function passingScore(): int
+    {
+        return $this->passing_score ?? 70;
     }
 }
