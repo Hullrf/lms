@@ -9,7 +9,7 @@ class StoreCourseRequest extends FormRequest
 {
     public function authorize(): bool
     {
-        return $this->user()->can('create', Course::class);
+        return (bool) $this->user()?->can('create', Course::class);
     }
 
     public function rules(): array

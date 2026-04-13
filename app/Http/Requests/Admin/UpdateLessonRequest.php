@@ -8,7 +8,8 @@ class UpdateLessonRequest extends FormRequest
 {
     public function authorize(): bool
     {
-        return (bool) $this->user()?->can('update', $this->route('lesson')->module->course);
+        $course = $this->route('lesson')?->module?->course;
+        return $course !== null && (bool) $this->user()?->can('update', $course);
     }
 
     public function rules(): array
