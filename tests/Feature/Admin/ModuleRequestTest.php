@@ -119,4 +119,34 @@ class ModuleRequestTest extends TestCase
             ->patch(route('admin.modules.update', $module), ['title' => 'Módulo'])
             ->assertForbidden();
     }
+
+    public function test_store_creates_module_with_valid_data(): void
+    {
+        $this->actingAs($this->instructor)
+            ->post(route('admin.courses.modules.store', $this->course), ['title' => 'Nuevo Módulo'])
+            ->assertSessionDoesntHaveErrors();
+
+        $this->assertDatabaseHas('modules', [
+            'course_id' => $this->course->id,
+            'title'     => 'Nuevo Módulo',
+        ]);
+    }
+
+    public function test_update_persists_changes_with_valid_data(): void
+    {
+        $module = Module::create([
+            'course_id'  => $this->course->id,
+            'title'      => 'Módulo original',
+            'sort_order' => 1,
+        ]);
+
+        $this->actingAs($this->instructor)
+            ->patch(route('admin.modules.update', $module), ['title' => 'Módulo actualizado'])
+            ->assertSessionDoesntHaveErrors();
+
+        $this->assertDatabaseHas('modules', [
+            'id'    => $module->id,
+            'title' => 'Módulo actualizado',
+        ]);
+    }
 }
