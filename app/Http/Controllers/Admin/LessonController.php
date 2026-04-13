@@ -3,26 +3,17 @@
 namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
-use App\Models\Module;
+use App\Http\Requests\Admin\StoreLessonRequest;
+use App\Http\Requests\Admin\UpdateLessonRequest;
 use App\Models\Lesson;
-use Illuminate\Http\Request;
+use App\Models\Module;
 use Illuminate\Support\Str;
 
 class LessonController extends Controller
 {
-    public function store(Request $request, Module $module)
+    public function store(StoreLessonRequest $request, Module $module)
     {
-        $this->authorize('update', $module->course);
-
-        $data = $request->validate([
-            'title'          => 'required|string|max:200',
-            'content'        => 'nullable|string',
-            'video_url'      => 'nullable|url',
-            'video_duration' => 'nullable|integer',
-            'type'           => 'required|in:video,text,quiz,file',
-            'is_preview'     => 'boolean',
-            'sort_order'     => 'integer|min:0',
-        ]);
+        $data = $request->validated();
 
         $data['slug']       = Str::slug($data['title']);
         $data['sort_order'] = $data['sort_order'] ?? $module->lessons()->count();
@@ -39,20 +30,9 @@ class LessonController extends Controller
         return back()->with('success', 'Lección creada.');
     }
 
-    public function update(Request $request, Lesson $lesson)
+    public function update(UpdateLessonRequest $request, Lesson $lesson)
     {
-        $this->authorize('update', $lesson->module->course);
-
-        $data = $request->validate([
-            'title'          => 'required|string|max:200',
-            'content'        => 'nullable|string',
-            'video_url'      => 'nullable|url',
-            'video_duration' => 'nullable|integer',
-            'type'           => 'required|in:video,text,quiz,file',
-            'is_preview'     => 'boolean',
-            'sort_order'     => 'integer|min:0',
-        ]);
-
+        $data = $request->validated();
         $lesson->update($data);
         return back()->with('success', 'Lección actualizada.');
     }
