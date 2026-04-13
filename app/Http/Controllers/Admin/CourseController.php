@@ -13,7 +13,7 @@ use Illuminate\Support\Str;
 
 class CourseController extends Controller
 {
-    public function index(\Illuminate\Http\Request $request)
+    public function index(Request $request)
     {
         $this->authorize('viewAny', Course::class);
 
