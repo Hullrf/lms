@@ -3,8 +3,10 @@
 namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
-use App\Models\Course;
+use App\Http\Requests\Admin\StoreCourseRequest;
+use App\Http\Requests\Admin\UpdateCourseRequest;
 use App\Models\Category;
+use App\Models\Course;
 use Illuminate\Http\Request;
 use Illuminate\Support\Carbon;
 use Illuminate\Support\Str;
@@ -27,17 +29,14 @@ class CourseController extends Controller
 
         $courses = $query->orderBy('title')->get();
 
-        // Agrupar por categoría; sin categoría va al final
         $grouped = $courses->groupBy(fn($c) => $c->category?->name ?? '__sin_categoria__')
             ->sortKeys();
 
-        // Separar "Sin categoría" y ponerla al final
         $sinCategoria = $grouped->pull('__sin_categoria__');
         if ($sinCategoria) {
             $grouped->put('Sin categoría', $sinCategoria);
         }
 
-        // IDs editables para el instructor
         $editableCourseIds = auth()->user()->isAdmin()
             ? null
             : Course::where('instructor_id', auth()->id())->pluck('id')
@@ -53,18 +52,9 @@ class CourseController extends Controller
         return view('admin.courses.create', compact('categories'));
     }
 
-    public function store(Request $request)
+    public function store(StoreCourseRequest $request)
     {
-        $data = $request->validate([
-            'title'       => 'required|string|max:200',
-            'description' => 'nullable|string',
-            'category_id' => 'nullable|exists:categories,id',
-            'price'       => 'required|numeric|min:0',
-            'is_free'     => 'boolean',
-            'level'       => 'required|in:beginner,intermediate,advanced',
-            'status'      => 'required|in:draft,published,archived',
-            'thumbnail'   => 'nullable|image|max:2048',
-        ]);
+        $data = $request->validated();
 
         $data['slug']          = Str::slug($data['title']);
         $data['instructor_id'] = auth()->id();
@@ -91,19 +81,9 @@ class CourseController extends Controller
         return view('admin.courses.edit', compact('course', 'categories'));
     }
 
-    public function update(Request $request, Course $course)
+    public function update(UpdateCourseRequest $request, Course $course)
     {
-        $this->authorize('update', $course);
-        $data = $request->validate([
-            'title'       => 'required|string|max:200',
-            'description' => 'nullable|string',
-            'category_id' => 'nullable|exists:categories,id',
-            'price'       => 'required|numeric|min:0',
-            'is_free'     => 'boolean',
-            'level'       => 'required|in:beginner,intermediate,advanced',
-            'status'      => 'required|in:draft,published,archived',
-            'thumbnail'   => 'nullable|image|max:2048',
-        ]);
+        $data = $request->validated();
 
         if ($request->hasFile('thumbnail')) {
             $data['thumbnail'] = $request->file('thumbnail')
@@ -133,22 +113,20 @@ class CourseController extends Controller
         $this->authorize('view', $course);
         $course->load('modules.lessons.resources', 'collaborators');
 
-        $enrollments   = $course->enrollments()->with('user')->get();
-        $totalEnrolled = $enrollments->count();
+        $enrollments    = $course->enrollments()->with('user')->get();
+        $totalEnrolled  = $enrollments->count();
         $totalCompleted = $enrollments->where('progress', 100)->count();
-        $avgProgress   = $totalEnrolled > 0 ? (int) round($enrollments->avg('progress')) : 0;
+        $avgProgress    = $totalEnrolled > 0 ? (int) round($enrollments->avg('progress')) : 0;
         $completionRate = $totalEnrolled > 0 ? (int) round($totalCompleted / $totalEnrolled * 100) : 0;
 
-        // Distribución de progreso
         $progressGroups = [
-            'Sin iniciar'   => $enrollments->where('progress', 0)->count(),
-            'Iniciado'      => $enrollments->filter(fn($e) => $e->progress >= 1  && $e->progress <= 25)->count(),
-            'En progreso'   => $enrollments->filter(fn($e) => $e->progress >= 26 && $e->progress <= 75)->count(),
-            'Avanzado'      => $enrollments->filter(fn($e) => $e->progress >= 76 && $e->progress <= 99)->count(),
-            'Completado'    => $enrollments->where('progress', 100)->count(),
+            'Sin iniciar' => $enrollments->where('progress', 0)->count(),
+            'Iniciado'    => $enrollments->filter(fn($e) => $e->progress >= 1  && $e->progress <= 25)->count(),
+            'En progreso' => $enrollments->filter(fn($e) => $e->progress >= 26 && $e->progress <= 75)->count(),
+            'Avanzado'    => $enrollments->filter(fn($e) => $e->progress >= 76 && $e->progress <= 99)->count(),
+            'Completado'  => $enrollments->where('progress', 100)->count(),
         ];
 
-        // Matrículas por mes (últimos 6 meses)
         $months = collect(range(5, 0))->map(fn($i) => now()->subMonths($i)->format('Y-m'));
         $enrollmentsRaw = $course->enrollments()
             ->selectRaw('DATE_FORMAT(enrolled_at, "%Y-%m") as month, COUNT(*) as total')
@@ -159,7 +137,6 @@ class CourseController extends Controller
         $monthLabels      = $months->map(fn($m) => Carbon::parse($m)->translatedFormat('M Y'))->values();
         $enrollmentSeries = $months->map(fn($m) => (int) ($enrollmentsRaw[$m] ?? 0))->values();
 
-        // Tasa de completación por lección
         $lessonStats = $course->modules->flatMap(function ($module) use ($totalEnrolled) {
             return $module->lessons->map(function ($lesson) use ($totalEnrolled) {
                 $completed = $lesson->progressRecords()->where('completed', true)->count();
@@ -172,7 +149,6 @@ class CourseController extends Controller
             });
         });
 
-        // Lista de estudiantes ordenada por progreso
         $studentStats = $enrollments->sortByDesc('progress')->values();
 
         return view('admin.courses.show', compact(
