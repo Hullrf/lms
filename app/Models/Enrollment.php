@@ -14,6 +14,7 @@ class Enrollment extends Model
     protected $casts = [
         'enrolled_at'  => 'datetime',
         'completed_at' => 'datetime',
+        'progress'     => 'integer',
     ];
 
     public function user()   { return $this->belongsTo(User::class); }
