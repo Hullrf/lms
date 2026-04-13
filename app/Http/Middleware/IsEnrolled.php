@@ -16,6 +16,11 @@ class IsEnrolled
             $course = Course::where('slug', $course)->firstOrFail();
         }
 
+        if (!$course) {
+            $lesson = $request->route('lesson');
+            $course = $lesson->module->course;
+        }
+
         if (!$course->isFree() && !auth()->user()->isEnrolledIn($course)) {
             return redirect()->route('courses.show', $course->slug)
                              ->with('error', 'Debes matricularte para acceder a este curso.');
