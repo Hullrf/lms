@@ -169,54 +169,86 @@
                         Este quiz aún no tiene preguntas configuradas.
                     </div>
                 @else
-                    @if($quizResults)
-                        {{-- Resultados del quiz --}}
-                        <div class="mb-6 p-5 rounded-xl border {{ $quizResults['passed'] ? 'bg-green-50 border-green-200' : 'bg-red-50 border-red-200' }}">
-                            <p class="font-semibold text-lg {{ $quizResults['passed'] ? 'text-green-700' : 'text-red-700' }}">
-                                {{ $quizResults['passed'] ? '¡Aprobaste! 🎉' : 'No aprobaste esta vez' }}
-                                — {{ $quizResults['score'] }}% ({{ $quizResults['correct'] }}/{{ $quizResults['total'] }} correctas)
+                    <div x-data="{
+                        results: null,
+                        submitting: false,
+                        passingScore: {{ $lesson->passingScore() }},
+                        async submitQuiz(form) {
+                            this.submitting = true;
+                            const formData = new FormData(form);
+                            const answers = {};
+                            for (const [key, value] of formData.entries()) {
+                                const match = key.match(/answers\[(\d+)\]/);
+                                if (match) answers[parseInt(match[1])] = parseInt(value);
+                            }
+                            try {
+                                const res = await fetch('{{ route('quiz.submit', $lesson) }}', {
+                                    method: 'POST',
+                                    headers: { 'Content-Type': 'application/json', 'X-CSRF-TOKEN': CSRF },
+                                    body: JSON.stringify({ answers })
+                                });
+                                const data = await res.json();
+                                this.results = data;
+                                if (data.passed) {
+                                    const bar = document.getElementById('progress-bar');
+                                    const label = document.getElementById('progress-label');
+                                    if (bar && data.progress !== undefined) bar.style.width = data.progress + '%';
+                                    if (label && data.progress !== undefined) label.textContent = data.progress + '%';
+                                    if (data.nextLesson) unlockNextLesson(data.nextLesson);
+                                }
+                            } finally {
+                                this.submitting = false;
+                            }
+                        }
+                    }">
+                        {{-- Banner de resultados --}}
+                        <div x-show="results !== null" x-cloak
+                             class="mb-6 p-5 rounded-xl border"
+                             :class="results?.passed ? 'bg-green-50 border-green-200' : 'bg-red-50 border-red-200'">
+                            <p class="font-semibold text-lg"
+                               :class="results?.passed ? 'text-green-700' : 'text-red-700'"
+                               x-text="results?.passed
+                                   ? `¡Aprobaste! 🎉 — ${results?.score}% (${results?.correct}/${results?.total} correctas)`
+                                   : `No aprobaste esta vez — ${results?.score}% (${results?.correct}/${results?.total} correctas)`">
                             </p>
-                            @if(!$quizResults['passed'])
-                                <p class="text-sm text-red-600 mt-1">Necesitas al menos 70% para pasar. Intenta de nuevo.</p>
-                            @endif
+                            <p x-show="results !== null && !results?.passed"
+                               class="text-sm text-red-600 mt-1"
+                               x-text="`Necesitas al menos ${passingScore}% para pasar. Intenta de nuevo.`">
+                            </p>
                         </div>
-                    @endif
 
-                    <form method="POST" action="{{ route('quiz.submit', $lesson) }}" class="space-y-6">
-                        @csrf
-                        @foreach($quizQuestions as $i => $question)
-                        <div class="bg-white border border-gray-200 rounded-xl p-5">
-                            <p class="font-medium text-gray-800 mb-3">{{ $i + 1 }}. {{ $question->question }}</p>
-                            <div class="space-y-2">
-                                @foreach($question->options as $option)
-                                @php
-                                    $resultClass = '';
-                                    if ($quizResults) {
-                                        $qResult = $quizResults['results'][$question->id] ?? null;
-                                        if ($qResult) {
-                                            if ($option->is_correct) $resultClass = 'border-green-400 bg-green-50';
-                                            elseif ((int)($qResult['selected'] ?? 0) === $option->id) $resultClass = 'border-red-400 bg-red-50';
-                                        }
-                                    }
-                                @endphp
-                                <label class="flex items-center gap-3 p-3 border rounded-lg cursor-pointer hover:bg-gray-50 transition {{ $resultClass }}">
-                                    <input type="radio" name="answers[{{ $question->id }}]" value="{{ $option->id }}"
-                                           {{ $quizResults && (int)($quizResults['results'][$question->id]['selected'] ?? 0) === $option->id ? 'checked' : '' }}
-                                           class="text-indigo-600">
-                                    <span class="text-sm text-gray-700">{{ $option->text }}</span>
-                                    @if($quizResults && $option->is_correct)
-                                        <span class="ml-auto text-xs text-green-600 font-medium">✓ Correcta</span>
-                                    @endif
-                                </label>
-                                @endforeach
+                        <form @submit.prevent="submitQuiz($el)" class="space-y-6">
+                            @csrf
+                            @foreach($quizQuestions as $i => $question)
+                            <div class="bg-white border border-gray-200 rounded-xl p-5">
+                                <p class="font-medium text-gray-800 mb-3">{{ $i + 1 }}. {{ $question->question }}</p>
+                                <div class="space-y-2">
+                                    @foreach($question->options as $option)
+                                    <label class="flex items-center gap-3 p-3 border rounded-lg cursor-pointer hover:bg-gray-50 transition"
+                                           :class="{
+                                               'border-green-400 bg-green-50': results && {{ $option->is_correct ? 'true' : 'false' }},
+                                               'border-red-400 bg-red-50': results && !{{ $option->is_correct ? 'true' : 'false' }} && results.results?.[{{ $question->id }}]?.selected === {{ $option->id }}
+                                           }">
+                                        <input type="radio"
+                                               name="answers[{{ $question->id }}]"
+                                               value="{{ $option->id }}"
+                                               class="text-indigo-600">
+                                        <span class="text-sm text-gray-700">{{ $option->text }}</span>
+                                        <span x-show="results && {{ $option->is_correct ? 'true' : 'false' }}"
+                                              class="ml-auto text-xs text-green-600 font-medium">✓ Correcta</span>
+                                    </label>
+                                    @endforeach
+                                </div>
                             </div>
-                        </div>
-                        @endforeach
-                        <button type="submit"
-                                class="bg-indigo-600 hover:bg-indigo-700 text-white px-6 py-3 rounded-lg font-medium transition">
-                            {{ $quizResults ? 'Intentar de nuevo' : 'Enviar respuestas' }}
-                        </button>
-                    </form>
+                            @endforeach
+
+                            <button type="submit"
+                                    :disabled="submitting"
+                                    class="bg-indigo-600 hover:bg-indigo-700 disabled:opacity-60 text-white px-6 py-3 rounded-lg font-medium transition"
+                                    x-text="results ? 'Intentar de nuevo' : (submitting ? 'Enviando...' : 'Enviar respuestas')">
+                            </button>
+                        </form>
+                    </div>
                 @endif
 
             {{-- Lección normal: indicador de estado --}}
@@ -236,6 +268,23 @@
 <script>
 const CSRF = document.querySelector('meta[name="csrf-token"]').content;
 const icons = { video: '▶️', quiz: '📝', text: '📄', file: '📄' };
+
+function unlockNextLesson(nextLesson) {
+    const locked = document.querySelector(`[data-locked-lesson="${nextLesson.id}"]`);
+    if (!locked) return;
+    const icon = icons[nextLesson.type] || '📄';
+    const div = document.createElement('div');
+    div.className = 'flex items-center gap-2 px-3 py-2.5 border-l-4 border-transparent hover:bg-gray-50 transition';
+    div.innerHTML = `
+        <span class="flex-shrink-0 text-xs">${icon}</span>
+        <a href="${nextLesson.url}" class="flex-1 text-sm line-clamp-2 text-gray-700">${nextLesson.title}</a>
+        <input type="checkbox" data-lesson="${nextLesson.id}"
+               class="lesson-check flex-shrink-0 w-4 h-4 rounded cursor-pointer accent-indigo-600"
+               title="Marcar como completada">
+    `;
+    locked.replaceWith(div);
+    attachCheckbox(div.querySelector('.lesson-check'));
+}
 
 function attachCheckbox(checkbox) {
     checkbox.addEventListener('change', async function () {
@@ -267,23 +316,7 @@ function attachCheckbox(checkbox) {
             }
 
             // Desbloquear la siguiente lección en el sidebar
-            if (data.nextLesson) {
-                const locked = document.querySelector(`[data-locked-lesson="${data.nextLesson.id}"]`);
-                if (locked) {
-                    const icon = icons[data.nextLesson.type] || '📄';
-                    const div = document.createElement('div');
-                    div.className = 'flex items-center gap-2 px-3 py-2.5 border-l-4 border-transparent hover:bg-gray-50 transition';
-                    div.innerHTML = `
-                        <span class="flex-shrink-0 text-xs">${icon}</span>
-                        <a href="${data.nextLesson.url}" class="flex-1 text-sm line-clamp-2 text-gray-700">${data.nextLesson.title}</a>
-                        <input type="checkbox" data-lesson="${data.nextLesson.id}"
-                               class="lesson-check flex-shrink-0 w-4 h-4 rounded cursor-pointer accent-indigo-600"
-                               title="Marcar como completada">
-                    `;
-                    locked.replaceWith(div);
-                    attachCheckbox(div.querySelector('.lesson-check'));
-                }
-            }
+            if (data.nextLesson) unlockNextLesson(data.nextLesson);
         } catch (e) {
             this.checked = false;
             this.disabled = false;

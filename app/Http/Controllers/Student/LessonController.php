@@ -55,9 +55,6 @@ class LessonController extends Controller
             ? $lesson->questions()->with('options')->orderBy('sort_order')->get()
             : collect();
 
-        // Resultados del quiz desde la sesión
-        $quizResults = session('quiz_results');
-
-        return view('courses.learn', compact('course', 'lesson', 'progress', 'allLessons', 'quizQuestions', 'quizResults'));
+        return view('courses.learn', compact('course', 'lesson', 'progress', 'allLessons', 'quizQuestions'));
     }
 }
